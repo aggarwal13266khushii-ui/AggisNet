@@ -1,0 +1,7 @@
+# AegisNet Git Ignore
+mingit/
+mingit.zip
+mingit2.zip
+setup_git.py
+.system_generated/
+*.log
