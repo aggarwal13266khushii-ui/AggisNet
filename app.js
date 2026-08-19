@@ -33,9 +33,160 @@ const MOCK_MESSAGES = [
     { sender: 'ai', text: "Hello! I am Aegis Guardian, your safety AI. If you're walking alone or feel unsafe, let me know. You can type, speak, or click one of the quick prompts below to get started.", time: new Date() }
 ];
 
+// Interactive 3D WebGL Splash Screen using Three.js
+function SplashScreen({ onEnter }) {
+    const containerRef = useRef(null);
+    const [fadeClass, setFadeClass] = useState("opacity-100");
+
+    useEffect(() => {
+        if (!window.THREE || !containerRef.current) return;
+
+        const width = containerRef.current.clientWidth;
+        const height = containerRef.current.clientHeight;
+
+        // 1. Scene Setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 100);
+        camera.position.z = 5;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        containerRef.current.appendChild(renderer.domElement);
+
+        // 2. Objects Creation
+        // Create an outer wireframe sphere (Aegis Red Globe)
+        const geometry = new THREE.SphereGeometry(1.7, 16, 16);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0xef4444, // Emergency Red
+            wireframe: true,
+            transparent: true,
+            opacity: 0.35
+        });
+        const globe = new THREE.Mesh(geometry, material);
+        scene.add(globe);
+
+        // Create an inner wireframe sphere (Neon Cyan)
+        const innerGeom = new THREE.IcosahedronGeometry(1.15, 1);
+        const innerMat = new THREE.MeshBasicMaterial({
+            color: 0x00f0ff, // Safety Cyan
+            wireframe: true,
+            transparent: true,
+            opacity: 0.2
+        });
+        const innerGlobe = new THREE.Mesh(innerGeom, innerMat);
+        scene.add(innerGlobe);
+
+        // Orbital particles (satellite protection grid)
+        const particleCount = 180;
+        const particleGeometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        
+        for (let i = 0; i < particleCount * 3; i += 3) {
+            const u = Math.random();
+            const v = Math.random();
+            const theta = u * 2.0 * Math.PI;
+            const phi = Math.acos(2.0 * v - 1.0);
+            const r = 2.0 + Math.random() * 0.5; // Orbit height
+            
+            positions[i] = r * Math.sin(phi) * Math.cos(theta);
+            positions[i+1] = r * Math.sin(phi) * Math.sin(theta);
+            positions[i+2] = r * Math.cos(phi);
+        }
+        
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.05,
+            transparent: true,
+            opacity: 0.8
+        });
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particles);
+
+        // 3. Mouse Parallax Movement
+        let mouseX = 0, mouseY = 0;
+        const onMouseMove = (e) => {
+            mouseX = (e.clientX - window.innerWidth / 2) / 200;
+            mouseY = (e.clientY - window.innerHeight / 2) / 200;
+        };
+        window.addEventListener('mousemove', onMouseMove);
+
+        // 4. Animation loop
+        let animId;
+        const animate = () => {
+            animId = requestAnimationFrame(animate);
+
+            globe.rotation.y += 0.005;
+            globe.rotation.x += 0.002;
+
+            innerGlobe.rotation.y -= 0.003;
+
+            particles.rotation.y += 0.001;
+            particles.rotation.x -= 0.001;
+
+            // Interpolate mouse positioning for smooth parallax
+            scene.rotation.y += (mouseX - scene.rotation.y) * 0.05;
+            scene.rotation.x += (mouseY - scene.rotation.x) * 0.05;
+
+            renderer.render(scene, camera);
+        };
+        animate();
+
+        // 5. Clean up WebGL contexts and listeners
+        return () => {
+            cancelAnimationFrame(animId);
+            window.removeEventListener('mousemove', onMouseMove);
+            if (containerRef.current && renderer.domElement) {
+                try {
+                    containerRef.current.removeChild(renderer.domElement);
+                } catch(e){}
+            }
+            geometry.dispose();
+            material.dispose();
+            innerGeom.dispose();
+            innerMat.dispose();
+            particleGeometry.dispose();
+            particleMaterial.dispose();
+        };
+    }, []);
+
+    const handleEnter = () => {
+        setFadeClass("opacity-0 transition-opacity duration-700 ease-out pointer-events-none");
+        setTimeout(onEnter, 700);
+    };
+
+    return (
+        <div className={`fixed inset-0 z-50 bg-[#060b13] flex flex-col items-center justify-center p-6 text-white text-center ${fadeClass}`}>
+            {/* Glowing background circles */}
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-red-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+            <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] bg-blue-500/5 rounded-full blur-[80px] pointer-events-none"></div>
+            
+            {/* Canvas Mount */}
+            <div ref={containerRef} className="w-64 h-64 md:w-80 md:h-80 relative flex items-center justify-center mb-4"></div>
+            
+            <div className="z-10 space-y-2 max-w-md">
+                <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-white leading-none">AEGISNET</h1>
+                <p className="text-xs md:text-sm font-black text-red-500 tracking-[0.25em] uppercase">AI Personal Safety Node</p>
+                <p className="text-slate-400 text-xs px-4 pt-4 pb-6 leading-relaxed">
+                    Empowering students, commuters, and families with AI-driven safe pathfinding, discrete distress vocal triggers, and a real-time guardian network.
+                </p>
+                
+                <button 
+                    onClick={handleEnter}
+                    className="px-8 py-3.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/25 transition-all hover:scale-[1.03] active:scale-[0.98]"
+                >
+                    Initialize Secure Node
+                </button>
+            </div>
+        </div>
+    );
+}
+
 // Main App Component
 function App() {
     // Basic settings
+    const [showSplash, setShowSplash] = useState(true);
     const [darkMode, setDarkMode] = useState(true);
     const [currentTab, setCurrentTab] = useState('shield'); // 'shield' | 'companion' | 'switch' | 'circle'
     
@@ -777,6 +928,7 @@ function App() {
 
     return (
         <div className="flex flex-col md:flex-row h-full w-full bg-slate-50 dark:bg-navy-950">
+            {showSplash && <SplashScreen onEnter={() => setShowSplash(false)} />}
             
             {/* Desktop Navigation Sidebar / Mobile Title Header */}
             <aside className="w-full md:w-80 bg-white dark:bg-navy-900 border-b md:border-b-0 md:border-r border-slate-200 dark:border-navy-800 flex flex-col z-20 shadow-md">
