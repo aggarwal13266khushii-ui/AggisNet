@@ -15,6 +15,18 @@ class SafeHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
         # Prevent caching for active development
         self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
+        # Security Headers
+        self.send_header('X-Frame-Options', 'DENY')
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('X-XSS-Protection', '1; mode=block')
+        self.send_header('Content-Security-Policy', 
+                         "default-src 'self'; "
+                         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com; "
+                         "style-src 'self' 'unsafe-inline' https://unpkg.com; "
+                         "img-src 'self' data: https://{s}.tile.openstreetmap.org https://unpkg.com; "
+                         "connect-src 'self' https://*.tile.openstreetmap.org; "
+                         "media-src 'self' blob: data:; "
+                         "font-src 'self' data:;")
         super().end_headers()
 
 # Update extensions map to ensure modern browsers treat JS files correctly

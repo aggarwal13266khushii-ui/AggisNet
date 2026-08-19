@@ -33,6 +33,34 @@ const MOCK_MESSAGES = [
     { sender: 'ai', text: "Hello! I am Aegis Guardian, your safety AI. If you're walking alone or feel unsafe, let me know. You can type, speak, or click one of the quick prompts below to get started.", time: new Date() }
 ];
 
+// Local Edge AI RAG Knowledge Base
+const SAFETY_HANDBOOK = [
+    {
+        id: "ref_escape",
+        keywords: ["grab", "hold", "wrist", "choke", "break", "escape", "attacker", "self defense", "hit", "fight"],
+        title: "Aegis Tactical Index - Sec 2.4 (Wrist Lock Break)",
+        text: "Tactical Response: If grabbed, rotate your arm towards the attacker's thumb opening where their grip is weakest. Push down and pull back with sudden, explosive force to break the grip. Head towards populated zones immediately."
+    },
+    {
+        id: "ref_stalker",
+        keywords: ["follow", "stalk", "behind", "person", "suspicious", "shadow", "car", "creepy", "walking"],
+        title: "Aegis Travel Protocol - Sec 1.2 (Evasion & Safe Zone Routing)",
+        text: "Evasion Protocol: Do not walk home directly (avoid revealing your address). Cross the street to verify if you are truly being followed. Head immediately to the nearest illuminated commercial zone (e.g. Broadway 24h store). Keep talking aloud to Aegis Walk Companion."
+    },
+    {
+        id: "ref_deescalate",
+        keywords: ["confront", "aggressive", "angry", "guy", "yell", "shout", "mad", "threaten", "drunk"],
+        title: "Aegis Conflict Index - Sec 3.1 (Non-Violent De-escalation)",
+        text: "De-escalation Routine: Keep a distance of at least two arm lengths. Stand slightly angled (not head-on) to look non-combative. Keep your hands visible, open, and level with chest. Speak in a quiet, firm, monotone voice to de-escalate. Back away slowly."
+    },
+    {
+        id: "ref_injury",
+        keywords: ["injury", "hurt", "bleed", "wound", "pain", "accident", "fall", "first aid", "cut", "scream"],
+        title: "Aegis First Aid Guide - Sec 5.1 (Trauma Response)",
+        text: "Medical Response: In case of impact/fall injury, apply immediate direct pressure to bleeding wounds using clean cloth. Elevate the wounded limb above heart level if possible. Keep warm to prevent shock. Call emergency contacts immediately."
+    }
+];
+
 // Interactive 3D WebGL Splash Screen using Three.js
 function SplashScreen({ onEnter, onQuickAction }) {
     const containerRef = useRef(null);
@@ -181,7 +209,7 @@ function SplashScreen({ onEnter, onQuickAction }) {
     };
 
     return (
-        <div className={`fixed inset-0 z-50 bg-[#04080e] flex items-center justify-center p-4 md:p-8 text-white font-sans ${fadeClass} overflow-y-auto`}>
+        <div className={`fixed inset-0 z-50 bg-[#04080e] flex items-center justify-center p-4 md:p-8 text-white font-sans ${fadeClass} overflow-y-auto`} role="dialog" aria-modal="true" aria-label="AegisNet Welcome Dashboard">
             {/* Glowing background highlights */}
             <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-red-650/10 rounded-full blur-[120px] pointer-events-none"></div>
             <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] bg-blue-500/5 rounded-full blur-[100px] pointer-events-none"></div>
@@ -207,7 +235,7 @@ function SplashScreen({ onEnter, onQuickAction }) {
                             </div>
                             
                             {/* Glowing Terminal Printout */}
-                            <div className="bg-black/50 p-4 rounded-xl border border-slate-800/50 font-mono text-[10px] text-cyan-400 space-y-1 min-h-[70px] leading-relaxed shadow-inner">
+                            <div className="bg-black/50 p-4 rounded-xl border border-slate-800/50 font-mono text-[10px] text-cyan-400 space-y-1 min-h-[70px] leading-relaxed shadow-inner" aria-live="polite">
                                 <div className="flex items-center gap-1.5">
                                     <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
                                     <span>{scanText}</span>
@@ -221,9 +249,9 @@ function SplashScreen({ onEnter, onQuickAction }) {
                                     <span>Scan Integrity</span>
                                     <span>{scanProgress}%</span>
                                 </div>
-                                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden" role="progressbar" aria-valuenow={scanProgress} aria-valuemin="0" aria-valuemax="100">
                                     <div 
-                                        className="bg-gradient-to-r from-red-600 to-cyan-400 h-full transition-all duration-300"
+                                        className="bg-gradient-to-r from-red-650 to-cyan-400 h-full transition-all duration-300"
                                         style={{ width: `${scanProgress}%` }}
                                     ></div>
                                 </div>
@@ -235,11 +263,11 @@ function SplashScreen({ onEnter, onQuickAction }) {
                             {/* Radial Threat Indicator */}
                             <div className="flex items-center gap-4 bg-black/30 p-3 rounded-2xl border border-slate-800/50 shadow-inner">
                                 <div className="relative w-12 h-12 flex items-center justify-center">
-                                    <svg className="w-12 h-12 -rotate-90">
+                                    <svg className="w-12 h-12 -rotate-90" aria-hidden="true">
                                         <circle cx="24" cy="24" r="20" className="stroke-slate-800 fill-none" strokeWidth="4" />
                                         <circle cx="24" cy="24" r="20" className="stroke-emerald-500 fill-none" strokeWidth="4" strokeDasharray="125" strokeDashoffset="10" />
                                     </svg>
-                                    <span className="absolute text-xs font-black font-mono text-emerald-400">96%</span>
+                                    <span className="absolute text-xs font-black font-mono text-emerald-400" aria-label="96 percent safety rating">96%</span>
                                 </div>
                                 <div>
                                     <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Network Threat Index</div>
@@ -250,17 +278,17 @@ function SplashScreen({ onEnter, onQuickAction }) {
                             {/* Checklist widget */}
                             <div className="space-y-2">
                                 <div className="text-[9px] font-black text-slate-500 uppercase tracking-wider">System Checklist</div>
-                                <div className="grid grid-cols-2 gap-2 text-[10px]">
-                                    <div className="p-2 bg-slate-850/50 rounded-xl border border-slate-800/30 flex items-center gap-1.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></span>
+                                <div className="grid grid-cols-2 gap-2 text-[10px]" role="list">
+                                    <div className="p-2 bg-slate-850/50 rounded-xl border border-slate-800/30 flex items-center gap-1.5" role="listitem">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" aria-hidden="true"></span>
                                         <span className="text-slate-300 font-bold">GPS Geolocation</span>
                                     </div>
-                                    <div className="p-2 bg-slate-850/50 rounded-xl border border-slate-800/30 flex items-center gap-1.5">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></span>
+                                    <div className="p-2 bg-slate-850/50 rounded-xl border border-slate-800/30 flex items-center gap-1.5" role="listitem">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" aria-hidden="true"></span>
                                         <span className="text-slate-300 font-bold">Edge AI Mic</span>
                                     </div>
-                                    <div className="p-2 bg-slate-850/50 rounded-xl border border-slate-800/30 flex items-center gap-1.5 col-span-2">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></span>
+                                    <div className="p-2 bg-slate-850/50 rounded-xl border border-slate-800/30 flex items-center gap-1.5 col-span-2" role="listitem">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" aria-hidden="true"></span>
                                         <span className="text-slate-300 font-bold">Guardian Network: 3 Active Circle Beacons</span>
                                     </div>
                                 </div>
@@ -274,6 +302,8 @@ function SplashScreen({ onEnter, onQuickAction }) {
                                         onClick={() => handleQuickActionClick('call')}
                                         className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 transition"
                                         title="Simulate Fake Call instantly"
+                                        aria-label="Simulate fake phone call"
+                                        type="button"
                                     >
                                         <Icon name="phone" size={16} />
                                         <span className="text-[9px] font-black mt-1 uppercase">Fake Call</span>
@@ -282,6 +312,8 @@ function SplashScreen({ onEnter, onQuickAction }) {
                                         onClick={() => handleQuickActionClick('cover')}
                                         className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 transition"
                                         title="Open Notes Cover Screen instantly"
+                                        aria-label="Launch covert notes screen"
+                                        type="button"
                                     >
                                         <Icon name="eye-off" size={16} />
                                         <span className="text-[9px] font-black mt-1 uppercase">Notepad</span>
@@ -290,6 +322,8 @@ function SplashScreen({ onEnter, onQuickAction }) {
                                         onClick={() => handleQuickActionClick('sos')}
                                         className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-red-650/15 hover:bg-red-600/30 border border-red-500/40 text-red-500 transition animate-pulse"
                                         title="Trigger Silent SOS instantly"
+                                        aria-label="Trigger immediate emergency SOS"
+                                        type="button"
                                     >
                                         <Icon name="shield-alert" size={16} />
                                         <span className="text-[9px] font-black mt-1 uppercase">Silent SOS</span>
@@ -301,6 +335,8 @@ function SplashScreen({ onEnter, onQuickAction }) {
                             <button 
                                 onClick={handleEnter}
                                 className="w-full py-4 bg-gradient-to-r from-red-650 to-red-750 hover:from-red-600 hover:to-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                                aria-label="Enter Active Patrol Safety Node"
+                                type="button"
                             >
                                 <span>Initialize Active Patrol Node</span>
                                 <Icon name="chevron-right" size={14} />
@@ -318,7 +354,7 @@ function App() {
     // Basic settings
     const [showSplash, setShowSplash] = useState(true);
     const [darkMode, setDarkMode] = useState(true);
-    const [currentTab, setCurrentTab] = useState('shield'); // 'shield' | 'companion' | 'switch' | 'circle'
+    const [currentTab, setCurrentTab] = useState('shield'); // 'shield' | 'cam' | 'companion' | 'switch' | 'circle'
     
     // Safety & SOS States
     const [sosActive, setSosActive] = useState(false);
@@ -338,6 +374,11 @@ function App() {
     const [pinInput, setPinInput] = useState('');
     const [userPin, setUserPin] = useState('1234');
     const [pinError, setPinError] = useState('');
+
+    // Accelerometer Sensor States (Fall & Impact Detection)
+    const [accelForces, setAccelForces] = useState({ x: 0, y: 0, z: 9.81 });
+    const [isAccelActive, setIsAccelActive] = useState(false);
+    const [impactDetected, setImpactDetected] = useState(false);
 
     // Stealth Screens
     const [showFakeCall, setShowFakeCall] = useState(false);
@@ -412,6 +453,64 @@ function App() {
         }
     }, [darkMode]);
 
+    // Accelerometer Live Stream Monitor
+    const startAccelerometer = () => {
+        if (!isAccelActive) {
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            setIsAccelActive(true);
+                        }
+                    })
+                    .catch(err => {
+                        console.warn("Sensor access denied:", err);
+                    });
+            } else {
+                setIsAccelActive(true);
+            }
+        } else {
+            setIsAccelActive(false);
+            setAccelForces({ x: 0, y: 0, z: 9.81 });
+        }
+    };
+
+    useEffect(() => {
+        if (!isAccelActive) return;
+
+        const handleMotion = (event) => {
+            const acc = event.accelerationIncludingGravity || event.acceleration;
+            if (!acc) return;
+
+            const x = acc.x || 0;
+            const y = acc.y || 0;
+            const z = acc.z || 0;
+
+            setAccelForces({ x, y, z });
+
+            const force = Math.sqrt(x*x + y*y + z*z);
+            // Sudden impact drop threshold: 25 m/s^2 (Approx 2.5G)
+            if (force > 25) {
+                setImpactDetected(true);
+                triggerSOSAlert('Device Impact / Fall Detected');
+                setTimeout(() => setImpactDetected(false), 5000);
+            }
+        };
+
+        window.addEventListener('devicemotion', handleMotion);
+        return () => window.removeEventListener('devicemotion', handleMotion);
+    }, [isAccelActive]);
+
+    const simulateImpact = () => {
+        setImpactDetected(true);
+        setAccelForces({ x: 14.2, y: 19.8, z: 23.5 });
+        triggerSOSAlert('Simulated Impact Drop');
+        setTimeout(() => {
+            setImpactDetected(false);
+            setAccelForces({ x: 0, y: 0, z: 9.81 });
+        }, 5000);
+    };
+
     // Web Audio Siren Synthesizer
     const playSiren = useCallback(() => {
         if (sirenRef.current) return;
@@ -469,7 +568,6 @@ function App() {
             osc1.type = 'sine';
             osc2.type = 'sine';
             
-            // Standard US dual-tone ringer frequencies
             osc1.frequency.setValueAtTime(440, audioCtx.currentTime);
             osc2.frequency.setValueAtTime(480, audioCtx.currentTime);
 
@@ -494,7 +592,7 @@ function App() {
             };
 
             ringCadence(); // Ring immediately
-            const interval = setInterval(ringCadence, 2000); // Toggle ring every 2 seconds
+            const interval = setInterval(ringCadence, 2000);
 
             ringtoneRef.current = { ctx: audioCtx, osc1, osc2, mainGain, interval };
         } catch(e) {
@@ -519,7 +617,6 @@ function App() {
         if (!('speechSynthesis' in window)) return;
         window.speechSynthesis.cancel();
         
-        // Remove markdown symbols or links for cleaner speaking
         const cleanedText = text.replace(/[*#_\-\[\]\(\)]/g, " ").replace(/\d+\./g, "");
         const utterance = new SpeechSynthesisUtterance(cleanedText);
         utterance.rate = 1.0;
@@ -543,9 +640,8 @@ function App() {
     // SOS trigger sequence
     const triggerSOSAlert = (reason) => {
         setSosReason(reason);
-        setSosCountdown(3); // 3 seconds count down
+        setSosCountdown(3); 
         setSosActive(true);
-        // Clean up normal navigations
         setJourneyActive(false);
         setDeadManActive(false);
     };
@@ -558,10 +654,8 @@ function App() {
                 setSosCountdown(prev => prev - 1);
             }, 1000);
         } else if (sosActive && sosCountdown === 0) {
-            // SOS mode engaged!
             playSiren();
             
-            // Compile simulated SMS alerts
             const lat = userLocation[0].toFixed(6);
             const lng = userLocation[1].toFixed(6);
             const smsText = `🚨 AEGISNET EMERGENCY SOS! 🚨\nUser: Alex Jenkins (Critical Distress)\nCoordinates: Lat ${lat}, Lng ${lng}\nReason: ${sosReason || "Manual SOS Action"}\nBattery: 84%\nTrack Route: http://aegisnet.org/track/alex_j`;
@@ -577,7 +671,6 @@ function App() {
             
             setSentAlerts(newAlerts);
             
-            // Show standard browser notification if permitted
             if ("Notification" in window && Notification.permission === "granted") {
                 new Notification("AEGISNET: SOS TRIGGERED!", {
                     body: `Distress alert dispatched to ${contacts.length} emergency contacts!`,
@@ -595,7 +688,6 @@ function App() {
                 setDeadManTime(prev => {
                     if (prev <= 1) {
                         clearInterval(deadManIntervalRef.current);
-                        // Trigger SOS!
                         triggerSOSAlert("Dead Man's Switch Check-in Timeout");
                         return 0;
                     }
@@ -610,12 +702,9 @@ function App() {
     useEffect(() => {
         const interval = setInterval(() => {
             setCircleMembers(prev => prev.map(m => {
-                // slightly drift coords
                 const latOffset = (Math.random() - 0.5) * 0.0004;
                 const lngOffset = (Math.random() - 0.5) * 0.0004;
                 const newCoords = [m.coords[0] + latOffset, m.coords[1] + lngOffset];
-                
-                // simulate battery slow discharge
                 const newBattery = Math.max(5, m.battery - (Math.random() > 0.8 ? 1 : 0));
                 
                 return {
@@ -645,7 +734,6 @@ function App() {
                     const text = result[0].transcript.toLowerCase();
                     setRecognizedWords(text);
 
-                    // Red Distress Flags
                     const redKeywords = [
                         "aegis help", "aegis net", "call the police", "emergency", 
                         "being followed", "help me now", "save me", "please help"
@@ -661,7 +749,6 @@ function App() {
                 };
 
                 rec.onend = () => {
-                    // Loop start
                     if (voiceMonitoring && speechRecognitionRef.current) {
                         try { speechRecognitionRef.current.start(); } catch(e){}
                     }
@@ -670,7 +757,6 @@ function App() {
                 rec.start();
                 speechRecognitionRef.current = rec;
 
-                // Also initialize real mic analysis for screams (Web Audio)
                 navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(stream => {
                         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -691,10 +777,8 @@ function App() {
                             for(let i=0; i<bufferLength; i++) sum += dataArray[i];
                             const average = sum / bufferLength;
                             
-                            // Map decibels for UI display
                             setDecibels(Math.round(average));
 
-                            // Loud scream anomaly threshold (>85 out of 255)
                             if (average > 85 && !screamThrottle) {
                                 screamThrottle = true;
                                 triggerSOSAlert("Loud Scream Anomaly Detected");
@@ -712,7 +796,6 @@ function App() {
                 console.error("Web Speech activation failed", e);
             }
         } else {
-            // Stop listeners
             if (speechRecognitionRef.current) {
                 speechRecognitionRef.current.onend = null;
                 try { speechRecognitionRef.current.stop(); } catch(e){}
@@ -765,7 +848,6 @@ function App() {
                 if (!walkModeActive || sosActive) return;
                 const text = companionSpeeches[speakIndex % companionSpeeches.length];
                 
-                // Add message to chat log
                 setMessages(prev => [...prev, {
                     sender: 'ai',
                     text: `[Active Walk Companion] ${text}`,
@@ -775,11 +857,10 @@ function App() {
                 speakText(text);
                 speakIndex++;
                 
-                // schedule next in 30 seconds
                 timer = setTimeout(speakRoutine, 25000);
             };
             
-            timer = setTimeout(speakRoutine, 3000); // Start first chat call after 3s
+            timer = setTimeout(speakRoutine, 3000); 
         }
         return () => clearTimeout(timer);
     }, [walkModeActive, sosActive, currentTab]);
@@ -815,7 +896,6 @@ function App() {
     const handleAcceptCall = () => {
         stopRingtone();
         setFakeCallState('connected');
-        // Let the fake caller speak to make it sound incredibly realistic
         speakText(`Hey! Glad I reached you. Are you on your way back from campus? Let me stay on the line with you until you get home.`);
     };
 
@@ -832,8 +912,6 @@ function App() {
             setPinInput('');
             setShowPinPad(false);
             setPinError('');
-            
-            // alert sound for confirmation
             if ('vibrate' in navigator) navigator.vibrate([100]);
         } else {
             setPinError('Invalid PIN! Try again.');
@@ -857,13 +935,11 @@ function App() {
         setMessages(prev => [...prev, userMsg]);
         setInputValue('');
 
-        // Generate context-aware AI response
         setTimeout(() => {
             const aiResp = generateAIResponse(text);
             const aiMsg = { sender: 'ai', text: aiResp.text, options: aiResp.options, time: new Date() };
             setMessages(prev => [...prev, aiMsg]);
             
-            // Speak if walk companion mode is active
             if (walkModeActive || speechSynthesizing) {
                 speakText(aiResp.text);
             }
@@ -872,7 +948,37 @@ function App() {
 
     const generateAIResponse = (userMsg) => {
         const msg = userMsg.toLowerCase();
+
+        // 1. Simulated local vector RAG search
+        const queryTerms = msg.split(/\s+/);
+        let bestMatch = null;
+        let highestConfidence = 0;
         
+        SAFETY_HANDBOOK.forEach(item => {
+            let matches = 0;
+            queryTerms.forEach(term => {
+                if (item.keywords.some(keyword => term.includes(keyword) || keyword.includes(term))) {
+                    matches++;
+                }
+            });
+            
+            if (matches > 0) {
+                const confidence = Math.round((matches / Math.min(queryTerms.length, 5)) * 100);
+                if (confidence > highestConfidence) {
+                    highestConfidence = Math.min(confidence, 100);
+                    bestMatch = item;
+                }
+            }
+        });
+
+        if (bestMatch && highestConfidence > 20) {
+            return {
+                text: `🤖 [Local Edge AI RAG Engine Active]\n📊 Semantic Match Confidence: ${highestConfidence}%\n📖 Source Citation: ${bestMatch.title}\n\n${bestMatch.text}\n\nDo you want me to pre-draft an emergency text or find route vectors to the closest safe zone?`,
+                options: ["Copy Dispatch Note", "Check map for safe zones", "Start Walk Companion"]
+            };
+        }
+        
+        // 2. Default responses
         if (msg.includes("follow") || msg.includes("stalk") || msg.includes("behind me")) {
             return {
                 text: "I understand you're feeling unsafe. Stay calm. \n1. Do not head home directly (don't reveal where you live). \n2. Turn towards a well-lit main street immediately. There's Broadway just 300m ahead. \n3. Look for an open business (e.g., the 24/7 deli on the corner). \n4. Keep talking to me or click 'Fake Call' to deter them. Would you like me to dial a Fake Call now?",
@@ -936,18 +1042,16 @@ function App() {
         setJourneyActive(true);
         setJourneyStep(0);
         
-        // Define coordinates list for route simulation based on destination & type
         let coordinates = [];
         const start = [40.730823, -73.997330];
         const end = dest.coords;
         
         if (routeType === 'safe') {
-            // Broadway Route (Emerald Safe Route - well-lit, open shops)
             coordinates = [
                 start,
-                [40.730221, -73.993422], // Corner shop
-                [40.731422, -73.991201], // Well-lit Ave
-                [40.733500, -73.991100], // High-traffic square
+                [40.730221, -73.993422], 
+                [40.731422, -73.991201], 
+                [40.733500, -73.991100], 
                 end
             ];
         } else if (routeType === 'standard') {
@@ -958,11 +1062,10 @@ function App() {
                 end
             ];
         } else {
-            // Hazard route (Poor lighting, short but risky)
             coordinates = [
                 start,
-                [40.729986, -73.996112], // dark alley entrance
-                [40.730000, -73.994000], // unsafe pin location
+                [40.729986, -73.996112], 
+                [40.730000, -73.994000], 
                 [40.733000, -73.993000],
                 end
             ];
@@ -981,7 +1084,6 @@ function App() {
                 setJourneyStep(step);
                 setUserLocation(coordinates[step]);
                 
-                // If walking along hazard route, AI Companion warns user!
                 if (routeType === 'hazard' && step === 1) {
                     setMessages(prev => [...prev, {
                         sender: 'ai',
@@ -998,7 +1100,7 @@ function App() {
         clearInterval(journeyIntervalRef.current);
         setJourneyActive(false);
         setSelectedDestination(null);
-        setUserLocation([40.730823, -73.997330]); // Reset to start
+        setUserLocation([40.730823, -73.997330]); 
     };
 
     // Submitting a new hazard report from Map double-click/long-press
@@ -1048,7 +1150,6 @@ function App() {
         setContacts(prev => prev.filter(c => c.id !== id));
     };
 
-    // Safe cancel SOS button
     const handleCancelSOS = () => {
         stopSiren();
         setSosActive(false);
@@ -1076,7 +1177,7 @@ function App() {
                 {/* Header Brand */}
                 <div className="p-4 flex items-center justify-between border-b border-slate-100 dark:border-navy-800 bg-gradient-to-r from-navy-900 via-navy-800 to-navy-950 text-white md:bg-none md:text-slate-800 md:dark:text-slate-100">
                     <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center shadow-lg shadow-red-500/20">
+                        <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center shadow-lg shadow-red-500/20" aria-hidden="true">
                             <Icon name="shield-alert" className="text-white" size={20} />
                         </div>
                         <div>
@@ -1091,6 +1192,8 @@ function App() {
                             onClick={() => setDarkMode(!darkMode)}
                             className="p-2 rounded-lg bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-navy-700 transition"
                             title="Toggle Light/Dark Theme"
+                            aria-label="Toggle dark mode theme"
+                            type="button"
                         >
                             <Icon name={darkMode ? "sun" : "moon"} size={18} />
                         </button>
@@ -1100,7 +1203,7 @@ function App() {
                 {/* Dashboard Overall Status Alert Indicator */}
                 <div className="p-4 border-b border-slate-100 dark:border-navy-800 bg-slate-50 dark:bg-navy-900/50">
                     <div className="flex items-center gap-3 bg-white dark:bg-navy-800/80 p-3 rounded-xl border border-slate-100 dark:border-navy-700/50 shadow-sm">
-                        <div className="relative">
+                        <div className="relative" aria-hidden="true">
                             <span className={`flex h-3 w-3 rounded-full ${sosActive ? 'bg-red-500 animate-ping-slow' : 'bg-emerald-500 animate-pulse'}`}></span>
                             <span className={`absolute top-0 right-0 inline-flex rounded-full h-3 w-3 ${sosActive ? 'bg-red-600' : 'bg-emerald-500'}`}></span>
                         </div>
@@ -1111,7 +1214,7 @@ function App() {
                             </div>
                         </div>
                         {voiceMonitoring && (
-                            <div className="flex items-center gap-1 bg-red-500/10 text-red-500 dark:text-red-400 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
+                            <div className="flex items-center gap-1 bg-red-500/10 text-red-500 dark:text-red-400 text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse" aria-live="assertive">
                                 <Icon name="mic" size={10} />
                                 LISTENING
                             </div>
@@ -1120,17 +1223,36 @@ function App() {
                 </div>
 
                 {/* Tab selections */}
-                <nav className="flex-1 p-3 space-y-1 overflow-y-auto no-scrollbar hidden md:block">
+                <nav className="flex-1 p-3 space-y-1 overflow-y-auto no-scrollbar hidden md:block" role="tablist" aria-label="AegisNet Navigation Console">
                     <button 
                         onClick={() => setCurrentTab('shield')}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sm transition-all duration-150 ${currentTab === 'shield' ? 'bg-navy-900 text-white dark:bg-red-600 dark:text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-navy-800'}`}
+                        aria-label="Open Interactive Safety Map"
+                        role="tab"
+                        aria-selected={currentTab === 'shield'}
+                        type="button"
                     >
                         <Icon name="map" size={20} />
                         <span>Interactive Hazard Map</span>
                     </button>
                     <button 
+                        onClick={() => setCurrentTab('cam')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sm transition-all duration-150 ${currentTab === 'cam' ? 'bg-navy-900 text-white dark:bg-red-600 dark:text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-navy-800'}`}
+                        aria-label="Open Camera AR Telemetry Overlay"
+                        role="tab"
+                        aria-selected={currentTab === 'cam'}
+                        type="button"
+                    >
+                        <Icon name="camera" size={20} />
+                        <span>Aegis Cam AR HUD</span>
+                    </button>
+                    <button 
                         onClick={() => setCurrentTab('companion')}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sm transition-all duration-150 ${currentTab === 'companion' ? 'bg-navy-900 text-white dark:bg-red-600 dark:text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-navy-800'}`}
+                        aria-label="Open Safety Companion Chat"
+                        role="tab"
+                        aria-selected={currentTab === 'companion'}
+                        type="button"
                     >
                         <Icon name="message-square" size={20} />
                         <span>Guardian AI Chat</span>
@@ -1139,6 +1261,10 @@ function App() {
                     <button 
                         onClick={() => setCurrentTab('switch')}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sm transition-all duration-150 ${currentTab === 'switch' ? 'bg-navy-900 text-white dark:bg-red-600 dark:text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-navy-800'}`}
+                        aria-label="Open Dead Man Check-in Timer"
+                        role="tab"
+                        aria-selected={currentTab === 'switch'}
+                        type="button"
                     >
                         <Icon name="clock" size={20} />
                         <span>Dead Man Switch & PIN</span>
@@ -1147,6 +1273,10 @@ function App() {
                     <button 
                         onClick={() => setCurrentTab('circle')}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-bold text-sm transition-all duration-150 ${currentTab === 'circle' ? 'bg-navy-900 text-white dark:bg-red-600 dark:text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-navy-800'}`}
+                        aria-label="Open Guardian Circles Contacts Dashboard"
+                        role="tab"
+                        aria-selected={currentTab === 'circle'}
+                        type="button"
                     >
                         <Icon name="users" size={20} />
                         <span>Guardian Circle</span>
@@ -1159,6 +1289,8 @@ function App() {
                     <button 
                         onClick={() => handleTriggerFakeCall('Mom')}
                         className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-800 hover:bg-slate-50 dark:hover:bg-navy-700 text-slate-700 dark:text-slate-300 transition shadow-sm font-bold text-xs"
+                        aria-label="Simulate fake incoming call from Mom"
+                        type="button"
                     >
                         <Icon name="phone" className="text-emerald-500 mb-1" size={18} />
                         Fake Call
@@ -1166,6 +1298,8 @@ function App() {
                     <button 
                         onClick={() => setShowCoverScreen(true)}
                         className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-800 hover:bg-slate-50 dark:hover:bg-navy-700 text-slate-700 dark:text-slate-300 transition shadow-sm font-bold text-xs"
+                        aria-label="Open Cover Screen Notepad app"
+                        type="button"
                     >
                         <Icon name="eye-off" className="text-amber-500 mb-1" size={18} />
                         Cover Screen
@@ -1176,7 +1310,7 @@ function App() {
             {/* Main Interactive Screen Frame */}
             <main className="flex-1 flex flex-col relative overflow-hidden h-full">
                 
-                {/* Dynamic Content Switching Panels */}
+                {/* Dynamic Content Panels */}
                 <div className="flex-1 relative overflow-hidden">
                     {currentTab === 'shield' && (
                         <ShieldTab 
@@ -1202,6 +1336,13 @@ function App() {
                             voiceMonitoring={voiceMonitoring}
                             setVoiceMonitoring={setVoiceMonitoring}
                             decibels={decibels}
+                        />
+                    )}
+
+                    {currentTab === 'cam' && (
+                        <CamTab 
+                            userLocation={userLocation}
+                            triggerSOSAlert={triggerSOSAlert}
                         />
                     )}
 
@@ -1238,6 +1379,11 @@ function App() {
                             handlePinCancel={handlePinCancel}
                             handleTriggerFakeCall={handleTriggerFakeCall}
                             setShowCoverScreen={setShowCoverScreen}
+                            accelForces={accelForces}
+                            isAccelActive={isAccelActive}
+                            impactDetected={impactDetected}
+                            startAccelerometer={startAccelerometer}
+                            simulateImpact={simulateImpact}
                         />
                     )}
 
@@ -1252,27 +1398,50 @@ function App() {
                 </div>
 
                 {/* Mobile Bottom Navigation Bar (Thumb Zone) */}
-                <div className="md:hidden bg-white dark:bg-navy-900 border-t border-slate-200 dark:border-navy-800 grid grid-cols-4 py-2 px-1 z-20 shadow-lg">
+                <div className="md:hidden bg-white dark:bg-navy-900 border-t border-slate-200 dark:border-navy-800 grid grid-cols-5 py-2 px-1 z-20 shadow-lg" role="tablist" aria-label="Mobile Navigation tabs">
                     <button 
                         onClick={() => setCurrentTab('shield')}
                         className={`flex flex-col items-center py-1 transition ${currentTab === 'shield' ? 'text-red-500 font-bold' : 'text-slate-400 dark:text-slate-500'}`}
+                        aria-label="Safety Map Tab"
+                        role="tab"
+                        aria-selected={currentTab === 'shield'}
+                        type="button"
                     >
                         <Icon name="map" size={20} />
                         <span className="text-[10px] mt-0.5">Map</span>
                     </button>
                     <button 
+                        onClick={() => setCurrentTab('cam')}
+                        className={`flex flex-col items-center py-1 transition ${currentTab === 'cam' ? 'text-red-500 font-bold' : 'text-slate-400 dark:text-slate-500'}`}
+                        aria-label="AR Camera Tab"
+                        role="tab"
+                        aria-selected={currentTab === 'cam'}
+                        type="button"
+                    >
+                        <Icon name="camera" size={20} />
+                        <span className="text-[10px] mt-0.5">Cam HUD</span>
+                    </button>
+                    <button 
                         onClick={() => setCurrentTab('companion')}
                         className={`flex flex-col items-center py-1 transition ${currentTab === 'companion' ? 'text-red-500 font-bold' : 'text-slate-400 dark:text-slate-500'}`}
+                        aria-label="AI Chat Companion Tab"
+                        role="tab"
+                        aria-selected={currentTab === 'companion'}
+                        type="button"
                     >
                         <div className="relative">
                             <Icon name="message-square" size={20} />
-                            {walkModeActive && <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-red-500"></span>}
+                            {walkModeActive && <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-red-500" aria-hidden="true"></span>}
                         </div>
                         <span className="text-[10px] mt-0.5">AI Chat</span>
                     </button>
                     <button 
                         onClick={() => setCurrentTab('switch')}
                         className={`flex flex-col items-center py-1 transition ${currentTab === 'switch' ? 'text-red-500 font-bold' : 'text-slate-400 dark:text-slate-500'}`}
+                        aria-label="Timer and Sensors Tab"
+                        role="tab"
+                        aria-selected={currentTab === 'switch'}
+                        type="button"
                     >
                         <Icon name="clock" size={20} />
                         <span className="text-[10px] mt-0.5">Timer</span>
@@ -1280,6 +1449,10 @@ function App() {
                     <button 
                         onClick={() => setCurrentTab('circle')}
                         className={`flex flex-col items-center py-1 transition ${currentTab === 'circle' ? 'text-red-500 font-bold' : 'text-slate-400 dark:text-slate-500'}`}
+                        aria-label="Guardian Circle Tab"
+                        role="tab"
+                        aria-selected={currentTab === 'circle'}
+                        type="button"
                     >
                         <Icon name="users" size={20} />
                         <span className="text-[10px] mt-0.5">Circle</span>
@@ -1290,7 +1463,8 @@ function App() {
                 <button 
                     onClick={() => triggerSOSAlert("Manual Quick SOS Action")}
                     className="absolute bottom-16 md:bottom-6 right-6 z-30 w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all shadow-red-600/40 animate-sonar"
-                    title="INSTANT SOS ALARM"
+                    aria-label="TRIGGER IMMEDIATE EMERGENCY SOS"
+                    type="button"
                 >
                     <span className="font-extrabold text-sm tracking-wider">SOS</span>
                 </button>
@@ -1298,18 +1472,20 @@ function App() {
 
             {/* FULL SCREEN EMERGENCY SOS COUNTDOWN & ALERT MODAL */}
             {sosActive && (
-                <div className="fixed inset-0 z-50 bg-red-700 text-white flex flex-col items-center justify-center p-6 text-center animate-pulse-fast">
+                <div className="fixed inset-0 z-50 bg-red-700 text-white flex flex-col items-center justify-center p-6 text-center animate-pulse-fast" role="alertdialog" aria-modal="true" aria-label="Emergency SOS Beacon Active">
                     {sosCountdown > 0 ? (
                         <div className="space-y-6 max-w-md">
                             <h2 className="text-4xl font-extrabold tracking-tight">PRE-SOS ACTIVE</h2>
                             <p className="text-lg text-red-100 font-medium">Dispatching emergency contacts alerts in...</p>
                             <div className="w-36 h-36 rounded-full bg-white/20 border-4 border-white flex items-center justify-center mx-auto shadow-2xl">
-                                <span className="text-7xl font-extrabold font-mono">{sosCountdown}</span>
+                                <span className="text-7xl font-extrabold font-mono" aria-live="assertive">{sosCountdown}</span>
                             </div>
                             <p className="text-sm text-red-200">Tap CANCEL immediately if this is a mistake.</p>
                             <button 
                                 onClick={handleCancelSOS}
                                 className="w-full py-4 bg-white text-red-700 rounded-2xl font-black text-lg hover:bg-red-100 transition shadow-lg"
+                                aria-label="Cancel emergency SOS"
+                                type="button"
                             >
                                 CANCEL SOS SIGNAL
                             </button>
@@ -1317,18 +1493,18 @@ function App() {
                     ) : (
                         <div className="w-full max-w-lg space-y-6 relative flex flex-col h-full justify-between py-6">
                             <div className="space-y-2">
-                                <div className="inline-flex w-16 h-16 rounded-full bg-white text-red-600 items-center justify-center shadow-lg mb-2">
+                                <div className="inline-flex w-16 h-16 rounded-full bg-white text-red-600 items-center justify-center shadow-lg mb-2" aria-hidden="true">
                                     <Icon name="shield-alert" size={32} />
                                 </div>
                                 <h2 className="text-4xl font-black tracking-tight leading-none">SOS ALARM ACTIVE</h2>
                                 <p className="text-red-100 text-sm">AegisNet Beacon Broadcasting Live Geolocation</p>
                             </div>
 
-                            {/* SMS Logs Dispatch Summary */}
+                            {/* SMS Logs */}
                             <div className="bg-black/25 backdrop-blur rounded-2xl p-4 text-left border border-white/10 space-y-3 flex-1 overflow-y-auto no-scrollbar my-4">
                                 <div className="text-xs text-red-300 font-bold uppercase tracking-wider">Dispatched Alerts Log</div>
                                 {sentAlerts.length > 0 ? (
-                                    <div className="space-y-3">
+                                    <div className="space-y-3" role="log">
                                         {sentAlerts.map(alert => (
                                             <div key={alert.id} className="border-b border-white/5 pb-2 last:border-0 last:pb-0">
                                                 <div className="flex justify-between font-bold text-xs">
@@ -1358,12 +1534,15 @@ function App() {
                                     <button 
                                         onClick={handleCancelSOS}
                                         className="py-4 bg-white text-red-700 rounded-2xl font-black text-sm hover:bg-red-50 transition shadow-lg"
+                                        aria-label="I am safe, disarm alarm"
+                                        type="button"
                                     >
                                         I AM SAFE (Enter PIN)
                                     </button>
                                     <a 
                                         href="tel:911" 
                                         className="py-4 bg-black text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-black/80 transition shadow-lg"
+                                        aria-label="Call emergency nine one one"
                                     >
                                         <Icon name="phone-call" size={16} />
                                         CALL 911 DIRECT
@@ -1377,21 +1556,21 @@ function App() {
 
             {/* FAKE INCOMING CALL FULL SCREEN OVERLAY */}
             {showFakeCall && (
-                <div className="fixed inset-0 z-50 bg-[#121212] text-white flex flex-col justify-between py-12 px-8 font-sans">
+                <div className="fixed inset-0 z-50 bg-[#121212] text-white flex flex-col justify-between py-12 px-8 font-sans" role="dialog" aria-label="Incoming phone call simulation">
                     {fakeCallState === 'ringing' ? (
                         <>
-                            {/* Ringing UI */}
                             <div className="text-center space-y-3 mt-12">
                                 <div className="text-xs tracking-widest text-slate-400 font-semibold uppercase">Incoming Call</div>
                                 <h3 className="text-4xl font-normal tracking-tight">{fakeCallCaller}</h3>
                                 <div className="text-xs text-emerald-500 font-bold tracking-wide animate-pulse">AegisNet Guard Call</div>
                             </div>
 
-                            {/* Call Accept / Decline Buttons (Apple UI mock style) */}
                             <div className="max-w-xs w-full mx-auto grid grid-cols-2 gap-12 mb-12">
                                 <button 
                                     onClick={handleDeclineCall}
                                     className="flex flex-col items-center gap-2"
+                                    aria-label="Decline call"
+                                    type="button"
                                 >
                                     <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition">
                                         <Icon name="phone" className="text-white rotate-[135deg]" size={28} />
@@ -1401,6 +1580,8 @@ function App() {
                                 <button 
                                     onClick={handleAcceptCall}
                                     className="flex flex-col items-center gap-2"
+                                    aria-label="Accept call"
+                                    type="button"
                                 >
                                     <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition animate-bounce">
                                         <Icon name="phone" className="text-white" size={28} />
@@ -1411,18 +1592,16 @@ function App() {
                         </>
                     ) : (
                         <>
-                            {/* Connected/Active conversation UI */}
                             <div className="text-center space-y-3 mt-12">
                                 <h3 className="text-4xl font-normal tracking-tight">{fakeCallCaller}</h3>
-                                <div className="text-sm font-mono text-slate-400">
+                                <div className="text-sm font-mono text-slate-400" aria-live="polite">
                                     {Math.floor(fakeCallTime / 60)}:{(fakeCallTime % 60).toString().padStart(2, '0')}
                                 </div>
                             </div>
 
-                            {/* Active call keypad mockup */}
-                            <div className="max-w-xs w-full mx-auto grid grid-cols-3 gap-6 text-center my-6">
+                            <div className="max-w-xs w-full mx-auto grid grid-cols-3 gap-6 text-center my-6" role="grid">
                                 {['mic-off', 'keypad', 'volume-2', 'plus', 'video', 'contacts'].map((ico, idx) => (
-                                    <div key={idx} className="flex flex-col items-center gap-1">
+                                    <div key={idx} className="flex flex-col items-center gap-1" role="gridcell">
                                         <div className="w-14 h-14 rounded-full bg-white/10 flex items-center justify-center text-slate-300">
                                             <Icon name={ico === 'keypad' ? 'grid' : ico === 'contacts' ? 'users' : ico} size={20} />
                                         </div>
@@ -1431,11 +1610,12 @@ function App() {
                                 ))}
                             </div>
 
-                            {/* End Call Button */}
                             <div className="flex justify-center mb-12">
                                 <button 
                                     onClick={handleDeclineCall}
                                     className="flex flex-col items-center gap-2"
+                                    aria-label="End call"
+                                    type="button"
                                 >
                                     <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition">
                                         <Icon name="phone" className="text-white rotate-[135deg]" size={28} />
@@ -1450,9 +1630,8 @@ function App() {
 
             {/* STEALTH COVER SCREEN: NOTE PAD APP */}
             {showCoverScreen && (
-                <div className="fixed inset-0 z-50 bg-slate-50 dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 flex flex-col font-sans select-none">
+                <div className="fixed inset-0 z-50 bg-slate-50 dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 flex flex-col font-sans select-none" role="dialog" aria-label="Cover Notepad editor">
                     
-                    {/* Header bar looking like mundane notes folder */}
                     <header className="p-4 bg-white dark:bg-zinc-800 border-b border-slate-200 dark:border-zinc-700 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-500 font-semibold text-sm">
                             <Icon name="chevron-left" size={16} />
@@ -1460,26 +1639,27 @@ function App() {
                         </div>
                         <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">Saved Notes</div>
                         
-                        {/* Hidden Exit action: Long press this, or double click it, or simple click with disclaimer for judging demo */}
                         <button 
                             onClick={() => setShowCoverScreen(false)}
                             className="text-xs px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-zinc-700 hover:bg-slate-200 text-slate-500 dark:text-zinc-400 font-bold"
-                            title="Judging Mode: Click to return to Safe App"
+                            title="Exit Notepad and return to app"
+                            aria-label="Exit notes cover screen"
+                            type="button"
                         >
                             Exit Notepad
                         </button>
                     </header>
 
-                    {/* Main notepad splitter */}
                     <div className="flex-1 flex overflow-hidden">
-                        
-                        {/* Notepad sidebar list */}
-                        <aside className="w-1/3 bg-white dark:bg-zinc-850 border-r border-slate-200 dark:border-zinc-700 p-2 space-y-2 overflow-y-auto no-scrollbar">
+                        <aside className="w-1/3 bg-white dark:bg-zinc-850 border-r border-slate-200 dark:border-zinc-700 p-2 space-y-2 overflow-y-auto no-scrollbar" role="tablist" aria-label="Note documents list">
                             {coverNotes.map(note => (
                                 <button
                                     key={note.id}
                                     onClick={() => setActiveCoverNote(note.id)}
                                     className={`w-full text-left p-3 rounded-lg border transition ${activeCoverNote === note.id ? 'border-yellow-500 bg-yellow-500/10 dark:bg-yellow-500/5' : 'border-transparent hover:bg-slate-100 dark:hover:bg-zinc-800'}`}
+                                    aria-selected={activeCoverNote === note.id}
+                                    role="tab"
+                                    type="button"
                                 >
                                     <h4 className="font-extrabold text-xs truncate text-yellow-600 dark:text-yellow-500">{note.title}</h4>
                                     <p className="text-[10px] text-slate-400 dark:text-zinc-500 truncate mt-1">{note.content}</p>
@@ -1497,12 +1677,13 @@ function App() {
                                     setActiveCoverNote(newNote.id);
                                 }}
                                 className="w-full flex items-center justify-center gap-2 p-2 rounded-lg border border-dashed border-slate-300 dark:border-zinc-700 text-slate-500 dark:text-zinc-400 font-bold text-[10px] hover:bg-slate-100 dark:hover:bg-zinc-800"
+                                aria-label="Create new note doc"
+                                type="button"
                             >
                                 <Icon name="plus" size={12} /> Add Note
                             </button>
                         </aside>
 
-                        {/* Notepad Text Editor */}
                         <article className="flex-1 bg-white dark:bg-zinc-900 p-4 flex flex-col">
                             {(() => {
                                 const activeNote = coverNotes.find(n => n.id === activeCoverNote);
@@ -1518,6 +1699,7 @@ function App() {
                                             }}
                                             className="w-full font-black text-lg bg-transparent border-0 outline-none text-slate-800 dark:text-zinc-100 mb-2 focus:ring-0"
                                             placeholder="Note Title"
+                                            aria-label="Note title input"
                                         />
                                         <textarea
                                             value={activeNote.content}
@@ -1527,6 +1709,7 @@ function App() {
                                             }}
                                             className="w-full flex-1 bg-transparent border-0 outline-none resize-none text-xs text-slate-600 dark:text-zinc-300 focus:ring-0 leading-relaxed"
                                             placeholder="Start writing..."
+                                            aria-label="Note body text area"
                                         />
                                     </>
                                 );
@@ -1543,6 +1726,172 @@ function App() {
 // SUB-TAB COMPONENTS
 // ==========================================
 
+// TAB 0: AEGIS CAM (AR HUD & RECORDER VISUAL DETERRENT)
+function CamTab({ userLocation, triggerSOSAlert }) {
+    const videoRef = useRef(null);
+    const [hasCamera, setHasCamera] = useState(false);
+    const [cameraStream, setCameraStream] = useState(null);
+    const [facingMode, setFacingMode] = useState('environment'); // 'user' | 'environment'
+    const [stealthMode, setStealthMode] = useState(false);
+
+    useEffect(() => {
+        if (stealthMode) {
+            stopCamera();
+            return;
+        }
+        startCamera();
+        return () => stopCamera();
+    }, [facingMode, stealthMode]);
+
+    const startCamera = () => {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+        
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: facingMode },
+            audio: false
+        })
+        .then(stream => {
+            setCameraStream(stream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+            setHasCamera(true);
+        })
+        .catch(err => {
+            console.warn("Webcam access blocked or unavailable:", err);
+            setHasCamera(false);
+        });
+    };
+
+    const stopCamera = () => {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            setCameraStream(null);
+        }
+    };
+
+    const toggleFacingMode = () => {
+        setFacingMode(prev => prev === 'environment' ? 'user' : 'environment');
+    };
+
+    return (
+        <div className="h-full w-full bg-black relative flex flex-col font-sans overflow-hidden select-none" role="tabpanel" aria-label="Aegis Cam AR telemetry HUD">
+            {/* Camera Stream/Mock Render */}
+            {!stealthMode && hasCamera ? (
+                <video 
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover absolute inset-0 z-0"
+                />
+            ) : (
+                <div className="absolute inset-0 z-0 bg-slate-950 flex flex-col items-center justify-center text-center p-6 border-2 border-slate-900">
+                    {stealthMode ? (
+                        <div className="space-y-2">
+                            <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping inline-block"></span>
+                            <div className="text-emerald-400 font-mono text-[10px] uppercase tracking-widest">DISCREET COVERT RECORDER ARMED</div>
+                            <p className="text-slate-500 text-[9px] max-w-xs leading-relaxed">Display blacked out to deter confrontation and conserve battery. Safety sensors active in background.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4 w-full h-full relative flex flex-col items-center justify-center opacity-60">
+                            <div className="w-48 h-48 rounded-full border border-dashed border-red-500/20 flex items-center justify-center animate-spin duration-[10000ms]">
+                                <div className="w-36 h-36 rounded-full border border-dashed border-cyan-500/20 flex items-center justify-center">
+                                    <div className="w-24 h-24 rounded-full border border-cyan-500/30"></div>
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <span className="text-[10px] text-red-500 font-black uppercase tracking-wider block">CAMERA PERMISSION NOT GRANTED</span>
+                                <span className="text-[8px] text-slate-500 block uppercase tracking-widest">Running Simulated Video Deterrent</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Glowing HUD Telemetry overlay */}
+            <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between p-4 font-mono text-[10px] text-emerald-400 font-semibold select-none" aria-hidden="true">
+                <div className="flex justify-between items-start">
+                    <div className="space-y-1.5 bg-black/40 backdrop-blur-sm p-3 rounded-xl border border-emerald-500/20 pointer-events-auto">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
+                            <span className="text-[10px] font-black uppercase text-red-500 tracking-wider">🔴 ACTIVE STREAMING</span>
+                        </div>
+                        <div className="text-[9px] text-slate-300">NODE ID: AEG-NYU-4921</div>
+                        <div className="text-[9px] text-slate-300">BATTERY: 84% | TEMP: 32°C</div>
+                    </div>
+                    
+                    <div className="space-y-1 bg-black/40 backdrop-blur-sm p-3 rounded-xl border border-emerald-500/20 text-right">
+                        <div>GPS POSITION CHECKED</div>
+                        <div className="text-slate-300">LAT: {userLocation[0].toFixed(5)}</div>
+                        <div className="text-slate-300">LNG: {userLocation[1].toFixed(5)}</div>
+                    </div>
+                </div>
+
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-20 h-20 rounded-full border-2 border-emerald-500/10 flex items-center justify-center relative">
+                        <div className="w-2 h-2 bg-emerald-400/40 rounded-full"></div>
+                        <div className="absolute top-0 w-0.5 h-3 bg-emerald-500/30"></div>
+                        <div className="absolute bottom-0 w-0.5 h-3 bg-emerald-500/30"></div>
+                        <div className="absolute left-0 w-3 h-0.5 bg-emerald-500/30"></div>
+                        <div className="absolute right-0 w-3 h-0.5 bg-emerald-500/30"></div>
+                    </div>
+                </div>
+
+                <div className="flex justify-between items-end">
+                    <div className="space-y-1 bg-black/40 backdrop-blur-sm p-3 rounded-xl border border-emerald-500/20">
+                        <div className="text-slate-300 font-bold uppercase">CLOSEST SAFETY BEACON</div>
+                        <div className="text-xs font-black text-emerald-400 flex items-center gap-1.5 mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                            NYU BOBST LIBRARY: 340 meters
+                        </div>
+                    </div>
+                    
+                    <div className="bg-black/40 backdrop-blur-sm p-2 rounded-xl border border-emerald-500/20 font-bold">
+                        AR TELEMETRY NODE: 96%
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom Actions Row */}
+            <div className="absolute bottom-4 left-4 right-4 z-20 grid grid-cols-3 gap-2 bg-black/60 backdrop-blur border border-slate-800 rounded-2xl p-2.5">
+                <button 
+                    onClick={() => setStealthMode(!stealthMode)}
+                    className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all flex flex-col items-center justify-center gap-1 ${stealthMode ? 'bg-amber-500 text-white shadow-lg' : 'bg-slate-900 text-slate-300 hover:bg-slate-800'}`}
+                    aria-label="Toggle camera screen display black mode"
+                    type="button"
+                >
+                    <Icon name={stealthMode ? "eye" : "eye-off"} size={14} />
+                    <span>{stealthMode ? "Reveal Cam" : "Stealth Cam"}</span>
+                </button>
+
+                <button 
+                    onClick={toggleFacingMode}
+                    className="py-3 rounded-xl bg-slate-900 text-slate-300 hover:bg-slate-800 text-[10px] font-black uppercase flex flex-col items-center justify-center gap-1"
+                    aria-label="Switch between front and back camera view"
+                    type="button"
+                >
+                    <Icon name="refresh-cw" size={14} />
+                    <span>Flip View</span>
+                </button>
+
+                <button 
+                    onClick={() => {
+                        triggerSOSAlert('Covert Camera Duress Trigger');
+                        if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+                    }}
+                    className="py-3 rounded-xl bg-red-650/80 hover:bg-red-600 text-white text-[10px] font-black uppercase flex flex-col items-center justify-center gap-1 animate-pulse"
+                    aria-label="Trigger instant silent SOS alarm"
+                    type="button"
+                >
+                    <Icon name="shield-alert" size={14} />
+                    <span>Silent SOS</span>
+                </button>
+            </div>
+        </div>
+    );
+}
+
 // TAB 1: SHIELD (MAP, GPS, HAZARDS, VOICE TRIGGERS)
 function ShieldTab({ 
     userLocation, setUserLocation, hazards, contacts,
@@ -1558,12 +1907,10 @@ function ShieldTab({
 
     // Initialize Leaflet Map
     useEffect(() => {
-        // Create map element
         const map = L.map('map-container', {
             zoomControl: false
         }).setView(userLocation, 15);
 
-        // Add Standard OSM Tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap contributors'
@@ -1572,7 +1919,6 @@ function ShieldTab({
         L.control.zoom({ position: 'topleft' }).addTo(map);
         mapInstanceRef.current = map;
 
-        // Custom divIcon for the live user location
         const userIcon = L.divIcon({
             className: 'custom-user-marker',
             html: `
@@ -1585,11 +1931,9 @@ function ShieldTab({
             iconAnchor: [16, 16]
         });
 
-        // Set user marker
         const userMarker = L.marker(userLocation, { icon: userIcon }).addTo(map);
         userMarkerRef.current = userMarker;
 
-        // Click handler to drop a hazard pin
         map.on('click', (e) => {
             setReportLatLng([e.latlng.lat, e.latlng.lng]);
         });
@@ -1599,27 +1943,22 @@ function ShieldTab({
         };
     }, []);
 
-    // Update user location marker dynamically during simulation
     useEffect(() => {
         if (userMarkerRef.current && mapInstanceRef.current) {
             userMarkerRef.current.setLatLng(userLocation);
-            
-            // Keep map panning to center user during live walk journey
             if (journeyActive) {
                 mapInstanceRef.current.panTo(userLocation);
             }
         }
     }, [userLocation, journeyActive]);
 
-    // Plot hazard alert pins on the map
+    // Plot hazards
     useEffect(() => {
         if (!mapInstanceRef.current) return;
 
-        // Clear existing markers
         hazardMarkersRef.current.forEach(m => m.remove());
         hazardMarkersRef.current = [];
 
-        // Custom divIcon generator for hazards
         const makeHazardIcon = (severity) => {
             const color = severity === 'red' ? 'bg-red-500 border-red-200' : 'bg-amber-500 border-amber-200';
             return L.divIcon({
@@ -1637,7 +1976,6 @@ function ShieldTab({
             });
         };
 
-        // Render hazards
         hazards.forEach(h => {
             const marker = L.marker([h.lat, h.lng], { icon: makeHazardIcon(h.severity) })
                 .bindPopup(`<div class="p-1 font-sans">
@@ -1649,17 +1987,14 @@ function ShieldTab({
         });
     }, [hazards]);
 
-    // Plot Family Circle members on the map
+    // Plot Family Circle
     useEffect(() => {
         if (!mapInstanceRef.current) return;
 
-        // Clear existing markers
         circleMarkersRef.current.forEach(m => m.remove());
         circleMarkersRef.current = [];
 
-        // Custom divIcon for members
         const makeMemberIcon = (initials, name, colorClass) => {
-            const border = colorClass === 'bg-emerald-500' ? 'border-emerald-200' : 'border-amber-200';
             return L.divIcon({
                 className: 'custom-member-marker',
                 html: `
@@ -1677,24 +2012,22 @@ function ShieldTab({
             });
         };
 
-        // Render circle members
         circleMembers.forEach(m => {
             const initials = m.name.split(' ')[0][0] + (m.name.split(' ')[1] ? m.name.split(' ')[1][0] : '');
             const marker = L.marker(m.coords, { icon: makeMemberIcon(initials, m.name.split(' ')[0], m.color) })
                 .bindPopup(`<div class="p-1 text-xs">
                     <strong>${m.name}</strong><br/>
-                    <span class="text-[10px] text-slate-400">Status: ${m.status} | Batt: ${m.battery}%</span>
+                    <span class="text-[10px] text-slate-400 font-mono">Status: ${m.status} | Batt: ${m.battery}%</span>
                 </div>`)
                 .addTo(mapInstanceRef.current);
             circleMarkersRef.current.push(marker);
         });
     }, [circleMembers]);
 
-    // Draw route polylines on selection
+    // Draw route polylines
     useEffect(() => {
         if (!mapInstanceRef.current) return;
 
-        // Remove old routes
         Object.keys(routePolylinesRef.current).forEach(key => {
             if (routePolylinesRef.current[key]) {
                 routePolylinesRef.current[key].remove();
@@ -1707,7 +2040,6 @@ function ShieldTab({
         const start = [40.730823, -73.997330];
         const end = selectedDestination.coords;
 
-        // Mock coordinate paths
         const pathSafe = [
             start,
             [40.730221, -73.993422],
@@ -1725,14 +2057,12 @@ function ShieldTab({
 
         const pathHazard = [
             start,
-            [40.729986, -73.996112], // poor lighting area
+            [40.729986, -73.996112], 
             [40.730000, -73.994000],
             [40.733000, -73.993000],
             end
         ];
 
-        // Draw and color code routes
-        // Safe Route (Green, Thick)
         routePolylinesRef.current.safe = L.polyline(pathSafe, {
             color: '#10b981',
             weight: selectedRoute === 'safe' ? 7 : 4,
@@ -1740,21 +2070,18 @@ function ShieldTab({
             dashArray: selectedRoute === 'safe' ? '8, 8' : '0'
         }).addTo(mapInstanceRef.current);
 
-        // Standard Route (Amber/Blue)
         routePolylinesRef.current.standard = L.polyline(pathStandard, {
             color: '#3b82f6',
             weight: selectedRoute === 'standard' ? 7 : 4,
             opacity: selectedRoute === 'standard' ? 0.9 : 0.4
         }).addTo(mapInstanceRef.current);
 
-        // Unsafe / Hazard Alley route (Red)
         routePolylinesRef.current.hazard = L.polyline(pathHazard, {
             color: '#f59e0b',
             weight: selectedRoute === 'hazard' ? 7 : 4,
             opacity: selectedRoute === 'hazard' ? 0.9 : 0.4
         }).addTo(mapInstanceRef.current);
 
-        // Zoom map to fit selected route coordinates
         const group = new L.featureGroup([
             routePolylinesRef.current.safe,
             routePolylinesRef.current.standard,
@@ -1765,17 +2092,15 @@ function ShieldTab({
     }, [selectedDestination, selectedRoute]);
 
     return (
-        <div className="h-full w-full flex flex-col relative">
-            
-            {/* Interactive Leaflet Map Shell */}
+        <div className="h-full w-full flex flex-col relative" role="tabpanel" aria-label="Interactive Live Safety Route Map">
             <div className="flex-1 relative">
-                <div id="map-container" className="h-full w-full z-10"></div>
+                <div id="map-container" className="h-full w-full z-10" aria-label="Leaflet map area"></div>
                 
-                {/* Floating GPS Route Configuration Overlay Panel */}
+                {/* Safe-Path Router */}
                 <div className="absolute top-4 left-4 z-20 max-w-sm w-[calc(100%-2rem)] bg-white/95 dark:bg-navy-900/95 backdrop-blur border border-slate-100 dark:border-navy-800 rounded-2xl p-4 shadow-xl">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true"></span>
                             <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-100">Safe-Path AI Router</h3>
                         </div>
                         {journeyActive && (
@@ -1788,8 +2113,9 @@ function ShieldTab({
                     {!journeyActive ? (
                         <div className="space-y-3">
                             <div>
-                                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1.5">Select Destination</label>
+                                <label htmlFor="dest-select" className="block text-[10px] uppercase font-bold text-slate-400 mb-1.5">Select Destination</label>
                                 <select 
+                                    id="dest-select"
                                     className="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-800 text-slate-700 dark:text-slate-200 outline-none font-bold"
                                     onChange={(e) => {
                                         const dest = DESTINATIONS.find(d => d.id === e.target.value);
@@ -1819,31 +2145,32 @@ function ShieldTab({
                                 </div>
                             </div>
                             
-                            {/* Simulated Route Progress bar */}
-                            <div className="w-full bg-slate-100 dark:bg-navy-800 h-2 rounded-full overflow-hidden">
+                            <div className="w-full bg-slate-100 dark:bg-navy-800 h-2 rounded-full overflow-hidden" role="progressbar" aria-valuenow={journeyStep + 1} aria-valuemin="1" aria-valuemax="5">
                                 <div 
                                     className="bg-emerald-500 h-full transition-all duration-500"
                                     style={{ width: `${((journeyStep + 1)/5)*100}%` }}
                                 ></div>
                             </div>
 
-                            {/* Selector to manually override route type on the fly */}
                             <div className="grid grid-cols-3 gap-1.5">
                                 <button 
                                     onClick={() => startJourneySim(selectedDestination, 'safe')}
                                     className={`py-2 px-1 text-[10px] font-extrabold rounded-lg border transition ${selectedRoute === 'safe' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-50 dark:bg-navy-800 text-slate-500 border-transparent hover:bg-slate-100'}`}
+                                    type="button"
                                 >
                                     🟢 Safe path
                                 </button>
                                 <button 
                                     onClick={() => startJourneySim(selectedDestination, 'standard')}
                                     className={`py-2 px-1 text-[10px] font-extrabold rounded-lg border transition ${selectedRoute === 'standard' ? 'bg-blue-500 text-white border-blue-500' : 'bg-slate-50 dark:bg-navy-800 text-slate-500 border-transparent hover:bg-slate-100'}`}
+                                    type="button"
                                 >
                                     🔵 Standard
                                 </button>
                                 <button 
                                     onClick={() => startJourneySim(selectedDestination, 'hazard')}
                                     className={`py-2 px-1 text-[10px] font-extrabold rounded-lg border transition ${selectedRoute === 'hazard' ? 'bg-amber-500 text-white border-amber-500' : 'bg-slate-50 dark:bg-navy-800 text-slate-500 border-transparent hover:bg-slate-100'}`}
+                                    type="button"
                                 >
                                     🟡 Unlit Alley
                                 </button>
@@ -1852,6 +2179,7 @@ function ShieldTab({
                             <button 
                                 onClick={stopJourneySim}
                                 className="w-full py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-md"
+                                type="button"
                             >
                                 Cancel Navigation
                             </button>
@@ -1859,12 +2187,14 @@ function ShieldTab({
                     )}
                 </div>
 
-                {/* Floating Pocket AI Anomaly Audio Wave Widget */}
+                {/* Pocket AI Audio Wave widget */}
                 <div className="absolute top-4 right-4 z-20 bg-white/95 dark:bg-navy-900/95 border border-slate-100 dark:border-navy-800 rounded-2xl p-3 shadow-xl flex items-center gap-3">
                     <button 
                         onClick={() => setVoiceMonitoring(!voiceMonitoring)}
                         className={`w-10 h-10 rounded-xl flex items-center justify-center transition shadow-md ${voiceMonitoring ? 'bg-red-600 text-white animate-pulse' : 'bg-slate-100 dark:bg-navy-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200'}`}
                         title={voiceMonitoring ? "Voice monitoring active. Click to turn off." : "Turn on Pocket Voice trigger"}
+                        aria-label="Toggle continuous voice distress monitoring"
+                        type="button"
                     >
                         <Icon name="mic" size={18} />
                     </button>
@@ -1874,9 +2204,8 @@ function ShieldTab({
                             {voiceMonitoring ? 'DISTRESS MONITOR ACTIVE' : 'AUDIO DETECTOR OFF'}
                         </div>
                         {voiceMonitoring && (
-                            <div className="flex gap-0.5 items-end h-3 mt-1">
+                            <div className="flex gap-0.5 items-end h-3 mt-1" aria-label="Microphone decibel amplitude level">
                                 {[...Array(6)].map((_, i) => {
-                                    // Generate responsive wave height based on decibels or sine wave fallback
                                     const amp = decibels > 0 ? (decibels / 120) * 12 : Math.sin(Date.now() / 200 + i) * 6 + 6;
                                     return (
                                         <div 
@@ -1892,21 +2221,22 @@ function ShieldTab({
                     </div>
                 </div>
 
-                {/* MODAL: SUBMIT HAZARD POPUP (Triggered when map is clicked) */}
+                {/* Submit hazard modal */}
                 {reportLatLng && (
                     <div className="absolute inset-0 bg-navy-950/40 backdrop-blur-sm z-30 flex items-center justify-center p-4">
-                        <div className="bg-white dark:bg-navy-900 border border-slate-100 dark:border-navy-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+                        <div className="bg-white dark:bg-navy-900 border border-slate-100 dark:border-navy-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4" role="dialog" aria-label="Report safety hazard pin">
                             <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-navy-800">
                                 <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-100">Report Safety Hazard Pin</h3>
-                                <button onClick={() => setReportLatLng(null)} className="text-slate-400 hover:text-slate-600">
+                                <button onClick={() => setReportLatLng(null)} className="text-slate-400 hover:text-slate-600" aria-label="Close dialog">
                                     <Icon name="x" size={18} />
                                 </button>
                             </div>
                             
                             <form onSubmit={handleSubmitHazard} className="space-y-3">
                                 <div>
-                                    <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Hazard Category</label>
+                                    <label htmlFor="hazard-select" className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Hazard Category</label>
                                     <select 
+                                        id="hazard-select"
                                         value={reportType}
                                         onChange={(e) => setReportType(e.target.value)}
                                         className="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-850 text-slate-800 dark:text-slate-100 outline-none font-bold"
@@ -1920,8 +2250,9 @@ function ShieldTab({
                                 </div>
                                 
                                 <div>
-                                    <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Situation Description</label>
+                                    <label htmlFor="hazard-desc" className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Situation Description</label>
                                     <textarea 
+                                        id="hazard-desc"
                                         value={reportDesc}
                                         onChange={(e) => setReportDesc(e.target.value)}
                                         placeholder="Add brief details about the issue..."
@@ -1956,7 +2287,6 @@ function CompanionTab({
 }) {
     const chatEndRef = useRef(null);
 
-    // Auto-scroll to bottom of conversation
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
@@ -1966,12 +2296,12 @@ function CompanionTab({
     };
 
     return (
-        <div className="h-full w-full flex flex-col bg-slate-50 dark:bg-navy-950 font-sans">
+        <div className="h-full w-full flex flex-col bg-slate-50 dark:bg-navy-950 font-sans" role="tabpanel" aria-label="Aegis AI safety chatbot companion">
             
             {/* Top Companion Controller Header */}
             <div className="p-4 border-b border-slate-200 dark:border-navy-800 bg-white dark:bg-navy-900 flex items-center justify-between flex-shrink-0 shadow-sm">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-navy-900 flex items-center justify-center text-white shadow-md">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-navy-900 flex items-center justify-center text-white shadow-md" aria-hidden="true">
                         <Icon name="message-square" size={20} />
                     </div>
                     <div>
@@ -1981,7 +2311,6 @@ function CompanionTab({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Walk Mode / Speech toggler */}
                     <button 
                         onClick={() => {
                             if (walkModeActive) stopSpeaking();
@@ -1989,6 +2318,8 @@ function CompanionTab({
                         }}
                         className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black transition shadow-sm ${walkModeActive ? 'bg-emerald-500 text-white animate-pulse' : 'bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-navy-700'}`}
                         title="Enable TTS voice to companion you on walks"
+                        aria-label="Toggle voice walk companion mode"
+                        type="button"
                     >
                         <Icon name={walkModeActive ? "volume-2" : "volume-x"} size={14} />
                         <span>Walk Mode</span>
@@ -1998,6 +2329,8 @@ function CompanionTab({
                         onClick={copyDispatchToClipboard}
                         className="p-2 rounded-xl bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-navy-700 transition"
                         title="Pre-draft emergency dispatch coordinates note"
+                        aria-label="Copy emergency dispatch notes"
+                        type="button"
                     >
                         <Icon name="file-text" size={16} />
                     </button>
@@ -2012,7 +2345,7 @@ function CompanionTab({
                         <div key={index} className={`flex flex-col ${isAI ? 'items-start' : 'items-end'}`}>
                             <div className="max-w-[85%] flex items-start gap-2.5">
                                 {isAI && (
-                                    <div className="w-8 h-8 rounded-lg bg-navy-950 dark:bg-red-600 text-white flex items-center justify-center shadow flex-shrink-0 mt-0.5">
+                                    <div className="w-8 h-8 rounded-lg bg-navy-950 dark:bg-red-600 text-white flex items-center justify-center shadow flex-shrink-0 mt-0.5" aria-hidden="true">
                                         <Icon name="bot" size={16} />
                                     </div>
                                 )}
@@ -2021,7 +2354,6 @@ function CompanionTab({
                                 </div>
                             </div>
                             
-                            {/* Render Quick-Action Option Cards if present */}
                             {isAI && msg.options && (
                                 <div className="flex flex-wrap gap-2 mt-2 ml-10">
                                     {msg.options.map((opt, oIdx) => (
@@ -2035,6 +2367,7 @@ function CompanionTab({
                                                 }
                                             }}
                                             className="px-3 py-1.5 bg-slate-100 dark:bg-navy-800 hover:bg-slate-200 dark:hover:bg-navy-700 text-slate-600 dark:text-slate-300 rounded-xl text-[10px] font-black border border-slate-200/50 dark:border-navy-700/50 transition-all active:scale-95 shadow-sm"
+                                            type="button"
                                         >
                                             {opt}
                                         </button>
@@ -2047,7 +2380,7 @@ function CompanionTab({
                 <div ref={chatEndRef}></div>
             </div>
 
-            {/* Chat Input form (Thumb Zone) */}
+            {/* Chat Input */}
             <div className="p-4 border-t border-slate-200 dark:border-navy-800 bg-white dark:bg-navy-900 flex-shrink-0">
                 <form 
                     onSubmit={(e) => {
@@ -2062,10 +2395,12 @@ function CompanionTab({
                         onChange={(e) => setInputValue(e.target.value)}
                         placeholder="Describe your threat, route query, or safety concern..."
                         className="flex-1 bg-slate-50 dark:bg-navy-850 text-xs px-4 py-3.5 rounded-2xl border border-slate-200 dark:border-navy-700 text-slate-800 dark:text-slate-100 outline-none focus:border-red-500 font-medium"
+                        aria-label="Write a message to safety companion"
                     />
                     <button 
                         type="submit"
                         className="w-12 h-12 bg-navy-900 hover:bg-navy-950 dark:bg-red-600 dark:hover:bg-red-700 text-white rounded-2xl flex items-center justify-center shadow-lg transition"
+                        aria-label="Send message"
                     >
                         <Icon name="send" size={18} />
                     </button>
@@ -2079,10 +2414,10 @@ function CompanionTab({
 function SwitchTab({ 
     deadManActive, setDeadManActive, deadManTime, setDeadManTime, deadManDuration, setDeadManDuration,
     showPinPad, setShowPinPad, pinInput, setPinInput, userPin, setUserPin, pinError, handlePinSubmit, handlePinCancel,
-    handleTriggerFakeCall, setShowCoverScreen
+    handleTriggerFakeCall, setShowCoverScreen,
+    accelForces, isAccelActive, impactDetected, startAccelerometer, simulateImpact
 }) {
     
-    // Quick presets
     const handleSetDuration = (seconds) => {
         setDeadManDuration(seconds);
         setDeadManTime(seconds);
@@ -2099,12 +2434,12 @@ function SwitchTab({
     };
 
     return (
-        <div className="h-full w-full flex flex-col p-4 bg-slate-50 dark:bg-navy-950 overflow-y-auto no-scrollbar font-sans space-y-4">
+        <div className="h-full w-full flex flex-col p-4 bg-slate-50 dark:bg-navy-950 overflow-y-auto no-scrollbar font-sans space-y-4" role="tabpanel" aria-label="Security checkin timer switch and sensors page">
             
             {/* Header branding */}
             <div className="bg-white dark:bg-navy-900 border border-slate-100 dark:border-navy-800 p-4 rounded-2xl shadow-sm">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-md">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-white shadow-md" aria-hidden="true">
                         <Icon name="clock" size={20} />
                     </div>
                     <div>
@@ -2114,7 +2449,7 @@ function SwitchTab({
                 </div>
             </div>
 
-            {/* Countdown / Control Card */}
+            {/* Countdown Card */}
             <div className="bg-white dark:bg-navy-900 border border-slate-100 dark:border-navy-800 p-6 rounded-3xl shadow-lg text-center flex flex-col items-center space-y-4">
                 
                 {!deadManActive ? (
@@ -2124,13 +2459,11 @@ function SwitchTab({
                             <p className="text-[10px] text-slate-400">If you do not check-in with your PIN before the timer ends, SOS alerts trigger automatically.</p>
                         </div>
 
-                        {/* Large digital readout */}
-                        <div className="text-5xl font-black font-mono text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-navy-950 py-4 px-6 rounded-2xl border border-slate-100 dark:border-navy-850">
+                        <div className="text-5xl font-black font-mono text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-navy-950 py-4 px-6 rounded-2xl border border-slate-100 dark:border-navy-850" aria-live="polite">
                             {Math.floor(deadManDuration / 60)}:{(deadManDuration % 60).toString().padStart(2, '0')}
                         </div>
 
-                        {/* Quick Preset Buttons */}
-                        <div className="grid grid-cols-4 gap-2 w-full max-w-xs">
+                        <div className="grid grid-cols-4 gap-2 w-full max-w-xs" role="group" aria-label="Commute presets select">
                             {[
                                 { label: '10s', val: 10 },
                                 { label: '5m', val: 300 },
@@ -2141,15 +2474,17 @@ function SwitchTab({
                                     key={idx}
                                     onClick={() => handleSetDuration(preset.val)}
                                     className={`py-2 text-xs font-black rounded-xl border transition ${deadManDuration === preset.val ? 'bg-amber-500 text-white border-amber-500 shadow-md' : 'bg-slate-50 dark:bg-navy-800 text-slate-500 border-transparent hover:bg-slate-100'}`}
+                                    type="button"
                                 >
                                     {preset.label}
                                 </button>
                             ))}
                         </div>
 
-                        {/* Custom Sliders */}
                         <div className="w-full max-w-xs py-2">
+                            <label htmlFor="duration-slider" className="sr-only">Commute Duration Slider</label>
                             <input 
+                                id="duration-slider"
                                 type="range" 
                                 min="10" 
                                 max="3600" 
@@ -2158,7 +2493,7 @@ function SwitchTab({
                                 onChange={(e) => handleSetDuration(parseInt(e.target.value))}
                                 className="w-full accent-amber-500"
                             />
-                            <div className="flex justify-between text-[10px] text-slate-400 font-bold mt-1 uppercase">
+                            <div className="flex justify-between text-[10px] text-slate-400 font-bold mt-1 uppercase" aria-hidden="true">
                                 <span>Short demo</span>
                                 <span>1 hour</span>
                             </div>
@@ -2167,6 +2502,7 @@ function SwitchTab({
                         <button 
                             onClick={() => setDeadManActive(true)}
                             className="w-full max-w-xs py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-sm tracking-wide transition shadow-lg shadow-amber-500/20"
+                            type="button"
                         >
                             ARM MONITORING CHECK-IN
                         </button>
@@ -2174,15 +2510,14 @@ function SwitchTab({
                 ) : (
                     <>
                         <div className="space-y-1">
-                            <div className="flex items-center justify-center gap-1.5 text-xs text-red-500 font-black uppercase tracking-wider animate-pulse">
+                            <div className="flex items-center justify-center gap-1.5 text-xs text-red-500 font-black uppercase tracking-wider animate-pulse" aria-live="assertive">
                                 <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
                                 Dead Man Switch Armed
                             </div>
                             <p className="text-[10px] text-slate-400">Keep phone accessible. Ready your PIN verification code.</p>
                         </div>
 
-                        {/* Glowing Count down clock */}
-                        <div className={`text-6xl font-black font-mono py-4 px-6 rounded-3xl border transition-all duration-300 ${deadManTime < 30 ? 'bg-red-500/10 text-red-500 border-red-500 animate-pulse' : 'bg-amber-500/10 text-amber-500 border-amber-500'}`}>
+                        <div className={`text-6xl font-black font-mono py-4 px-6 rounded-3xl border transition-all duration-300 ${deadManTime < 30 ? 'bg-red-500/10 text-red-500 border-red-500 animate-pulse' : 'bg-amber-500/10 text-amber-500 border-amber-500'}`} aria-live="polite">
                             {Math.floor(deadManTime / 60)}:{(deadManTime % 60).toString().padStart(2, '0')}
                         </div>
 
@@ -2190,12 +2525,16 @@ function SwitchTab({
                             <button 
                                 onClick={() => setShowPinPad(true)}
                                 className="py-3 bg-slate-800 dark:bg-white text-white dark:text-slate-900 rounded-xl font-extrabold text-xs transition shadow-md"
+                                aria-label="Enter PIN code to disarm switch"
+                                type="button"
                             >
                                 Check-in (PIN)
                             </button>
                             <button 
-                                onClick={() => setDeadManTime(prev => prev + 300)} // Extend 5 mins
+                                onClick={() => setDeadManTime(prev => prev + 300)} 
                                 className="py-3 bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 rounded-xl font-extrabold text-xs border border-slate-200/50 dark:border-navy-700 transition"
+                                aria-label="Extend timer by five minutes"
+                                type="button"
                             >
                                 +5 Mins (Extend)
                             </button>
@@ -2204,17 +2543,68 @@ function SwitchTab({
                 )}
             </div>
 
-            {/* Emergency PIN Input Overlay (Pad style for stress situations) */}
+            {/* Impact Fall Sensor Widget */}
+            <div className="bg-white dark:bg-navy-900 border border-slate-100 dark:border-navy-800 p-4 rounded-2xl shadow-sm space-y-4">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-navy-800">
+                    <div>
+                        <h3 className="font-extrabold text-xs text-slate-800 dark:text-slate-100">Impact & Fall Detection</h3>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5">Live G-force crash accelerometer monitoring</p>
+                    </div>
+                    <button
+                        onClick={startAccelerometer}
+                        className={`p-2 rounded-lg text-xs font-bold transition ${isAccelActive ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-100 dark:bg-navy-800 text-slate-500'}`}
+                        title="Enable live device motion sensor pings"
+                        aria-label="Toggle active accelerometer sensors"
+                        type="button"
+                    >
+                        <Icon name="activity" size={14} />
+                    </button>
+                </div>
+
+                <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-mono">
+                        <div className="p-2 bg-slate-50 dark:bg-navy-850 rounded-lg">
+                            <div className="text-slate-400">X-Force</div>
+                            <div className="font-bold text-slate-700 dark:text-slate-200 mt-0.5">{accelForces.x.toFixed(2)} m/s²</div>
+                        </div>
+                        <div className="p-2 bg-slate-50 dark:bg-navy-850 rounded-lg">
+                            <div className="text-slate-400">Y-Force</div>
+                            <div className="font-bold text-slate-700 dark:text-slate-200 mt-0.5">{accelForces.y.toFixed(2)} m/s²</div>
+                        </div>
+                        <div className="p-2 bg-slate-50 dark:bg-navy-850 rounded-lg">
+                            <div className="text-slate-400">Z-Force</div>
+                            <div className="font-bold text-slate-700 dark:text-slate-200 mt-0.5">{accelForces.z.toFixed(2)} m/s²</div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] bg-slate-50 dark:bg-navy-850 p-2.5 rounded-xl">
+                        <span className="font-bold text-slate-500 dark:text-slate-400">IMPACT CALIBRATION:</span>
+                        <span className={`font-mono font-black ${impactDetected ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>
+                            {impactDetected ? "🚨 IMPACT EXCEEDED PRE-SOS!" : "🟢 SENSORS SECURE"}
+                        </span>
+                    </div>
+
+                    <button
+                        onClick={simulateImpact}
+                        className="w-full py-2.5 bg-slate-100 dark:bg-navy-800 hover:bg-slate-200 dark:hover:bg-navy-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-navy-700 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-sm animate-pulse"
+                        title="Simulate sudden drop/crash"
+                        type="button"
+                    >
+                        Simulate Sudden Impact (Fall)
+                    </button>
+                </div>
+            </div>
+
+            {/* PIN PAD MODAL */}
             {showPinPad && (
                 <div className="fixed inset-0 z-40 bg-navy-950/70 backdrop-blur-md flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-navy-900 border border-slate-100 dark:border-navy-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-5 text-center">
+                    <div className="bg-white dark:bg-navy-900 border border-slate-100 dark:border-navy-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-5 text-center" role="dialog" aria-label="PIN verification dialer">
                         <div className="space-y-1">
                             <h3 className="font-extrabold text-base text-slate-800 dark:text-slate-100">Confirm Secure Safe PIN</h3>
-                            <p className="text-[10px] text-slate-400">Enter pin code to disarm the emergency distress clock. Default PIN is <span className="font-black text-amber-500">1234</span>.</p>
+                            <p className="text-[10px] text-slate-400">Enter code to disarm switch clock. Default PIN is <span className="font-black text-amber-500">1234</span>.</p>
                         </div>
 
-                        {/* PIN Output Circles */}
-                        <div className="flex justify-center gap-4 py-2">
+                        <div className="flex justify-center gap-4 py-2" aria-label="Pin input length display">
                             {[...Array(4)].map((_, i) => (
                                 <div 
                                     key={i} 
@@ -2223,15 +2613,15 @@ function SwitchTab({
                             ))}
                         </div>
 
-                        {pinError && <div className="text-red-500 font-bold text-[11px] animate-shake">{pinError}</div>}
+                        {pinError && <div className="text-red-500 font-bold text-[11px] animate-shake" role="alert">{pinError}</div>}
 
-                        {/* Numeric Keyboard (Thumb Grid) */}
-                        <div className="grid grid-cols-3 gap-3 max-w-xs mx-auto">
+                        <div className="grid grid-cols-3 gap-3 max-w-xs mx-auto" role="group" aria-label="Pin pad keyboard">
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                                 <button
                                     key={num}
                                     onClick={() => handlePinPress(num.toString())}
                                     className="w-14 h-14 rounded-full bg-slate-50 dark:bg-navy-800 hover:bg-slate-100 dark:hover:bg-navy-700 text-slate-800 dark:text-slate-200 font-black text-lg transition flex items-center justify-center mx-auto shadow-sm"
+                                    type="button"
                                 >
                                     {num}
                                 </button>
@@ -2239,18 +2629,21 @@ function SwitchTab({
                             <button
                                 onClick={handlePinClear}
                                 className="w-14 h-14 rounded-full text-slate-400 font-extrabold text-xs transition flex items-center justify-center mx-auto hover:text-slate-600"
+                                type="button"
                             >
                                 Clear
                             </button>
                             <button
                                 onClick={() => handlePinPress('0')}
                                 className="w-14 h-14 rounded-full bg-slate-50 dark:bg-navy-800 hover:bg-slate-100 dark:hover:bg-navy-700 text-slate-800 dark:text-slate-200 font-black text-lg transition flex items-center justify-center mx-auto shadow-sm"
+                                type="button"
                             >
                                 0
                             </button>
                             <button
                                 onClick={handlePinSubmit}
                                 className="w-14 h-14 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs transition flex items-center justify-center mx-auto shadow-md"
+                                type="button"
                             >
                                 Enter
                             </button>
@@ -2259,6 +2652,7 @@ function SwitchTab({
                         <button 
                             onClick={handlePinCancel}
                             className="w-full py-3 bg-slate-100 dark:bg-navy-800 hover:bg-slate-200 text-slate-500 dark:text-slate-400 rounded-xl text-xs font-bold transition"
+                            type="button"
                         >
                             Cancel
                         </button>
@@ -2266,7 +2660,7 @@ function SwitchTab({
                 </div>
             )}
 
-            {/* Stealth & Utilities Settings Block */}
+            {/* Cover Settings */}
             <div className="bg-white dark:bg-navy-900 border border-slate-100 dark:border-navy-800 p-4 rounded-2xl shadow-sm space-y-4">
                 <h3 className="font-extrabold text-xs text-slate-400 uppercase tracking-wider pb-2 border-b border-slate-100 dark:border-navy-800">
                     Stealth & Cover Settings
@@ -2275,8 +2669,8 @@ function SwitchTab({
                 <div className="space-y-3">
                     <div className="flex justify-between items-center bg-slate-50 dark:bg-navy-850 p-3 rounded-xl">
                         <div>
-                            <span className="text-xs font-black text-slate-800 dark:text-slate-100 block">Deterrence Caller ID</span>
-                            <span className="text-[10px] text-slate-400 block mt-0.5">Customize fake incoming contact label.</span>
+                            <span className="text-xs font-black text-slate-800 dark:text-slate-100 block">Deterrence PIN Code</span>
+                            <span className="text-[10px] text-slate-400 block mt-0.5">Customize safe PIN deactivator code.</span>
                         </div>
                         <input 
                             type="text"
@@ -2286,19 +2680,22 @@ function SwitchTab({
                             className="w-16 text-center text-xs p-2 rounded-lg border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-800 text-slate-800 dark:text-slate-100 outline-none font-bold"
                             maxLength={4}
                             title="Safe PIN deactivator"
+                            aria-label="Modify safety disarm PIN code"
                         />
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
                         <button 
                             onClick={() => handleTriggerFakeCall('Mom')}
-                            className="p-3 border border-slate-200 dark:border-navy-800 rounded-xl bg-slate-50 dark:bg-navy-850 text-slate-700 dark:text-slate-300 font-extrabold text-xs hover:bg-slate-100 transition"
+                            className="p-3 border border-slate-200 dark:border-navy-850 rounded-xl bg-slate-50 dark:bg-navy-850 text-slate-700 dark:text-slate-300 font-extrabold text-xs hover:bg-slate-100 transition"
+                            type="button"
                         >
                             Test Ring (Mom)
                         </button>
                         <button 
                             onClick={() => setShowCoverScreen(true)}
-                            className="p-3 border border-slate-200 dark:border-navy-800 rounded-xl bg-slate-50 dark:bg-navy-850 text-slate-700 dark:text-slate-300 font-extrabold text-xs hover:bg-slate-100 transition"
+                            className="p-3 border border-slate-200 dark:border-navy-850 rounded-xl bg-slate-50 dark:bg-navy-850 text-slate-700 dark:text-slate-300 font-extrabold text-xs hover:bg-slate-100 transition"
+                            type="button"
                         >
                             Open Notepad Cover
                         </button>
@@ -2312,18 +2709,18 @@ function SwitchTab({
 // TAB 4: FAMILY TRUSTED CIRCLE & CONTACTS
 function CircleTab({ contacts, handleAddContact, handleDeleteContact, circleMembers }) {
     return (
-        <div className="h-full w-full flex flex-col p-4 bg-slate-50 dark:bg-navy-950 overflow-y-auto no-scrollbar font-sans space-y-4">
+        <div className="h-full w-full flex flex-col p-4 bg-slate-50 dark:bg-navy-950 overflow-y-auto no-scrollbar font-sans space-y-4" role="tabpanel" aria-label="Guardian contact list and live track dashboard">
             
-            {/* Live Trusted Tracker Status cards */}
+            {/* Live Trackers */}
             <div className="space-y-2">
                 <h3 className="font-extrabold text-xs text-slate-400 uppercase tracking-wider pb-1">
                     Live Guardian Trackers
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3" role="list">
                     {circleMembers.map(member => (
-                        <div key={member.id} className="bg-white dark:bg-navy-900 border border-slate-100 dark:border-navy-800 rounded-2xl p-4 shadow-sm flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-navy-800 flex items-center justify-center relative">
+                        <div key={member.id} className="bg-white dark:bg-navy-900 border border-slate-100 dark:border-navy-800 rounded-2xl p-4 shadow-sm flex items-center gap-3" role="listitem">
+                            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-navy-800 flex items-center justify-center relative" aria-hidden="true">
                                 <span className={`w-3.5 h-3.5 rounded-full ${member.color} text-white font-bold text-[8px] flex items-center justify-center border-2 border-white absolute -bottom-1 -right-1`}>
                                     ✔
                                 </span>
@@ -2352,32 +2749,43 @@ function CircleTab({ contacts, handleAddContact, handleDeleteContact, circleMemb
                         <h3 className="font-extrabold text-sm text-slate-850 dark:text-slate-100">Emergency Contacts</h3>
                         <p className="text-[10px] text-slate-400">These contacts receive automated SMS pings during SOS alerts.</p>
                     </div>
-                    <Icon name="users" className="text-slate-400" size={18} />
+                    <Icon name="users" className="text-slate-400" size={18} aria-hidden="true" />
                 </div>
 
                 {/* Contacts CRUD form */}
                 <form onSubmit={handleAddContact} className="grid grid-cols-2 gap-2 pb-4 border-b border-dashed border-slate-100 dark:border-navy-800">
+                    <label htmlFor="contact-name" className="sr-only">Guardian Name</label>
                     <input 
+                        id="contact-name"
                         type="text" 
                         name="name"
                         placeholder="Guardian Name"
                         className="col-span-2 text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-850 text-slate-800 dark:text-slate-100 outline-none"
                         required
                     />
+                    
+                    <label htmlFor="contact-phone" className="sr-only">Phone Number</label>
                     <input 
+                        id="contact-phone"
                         type="tel" 
                         name="phone"
                         placeholder="Phone (e.g. 555-123-4567)"
                         className="text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-850 text-slate-800 dark:text-slate-100 outline-none"
                         required
                     />
+
+                    <label htmlFor="contact-relation" className="sr-only">Relation Type</label>
                     <input 
+                        id="contact-relation"
                         type="text" 
                         name="relation"
                         placeholder="Relation (e.g. Sister)"
                         className="text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-850 text-slate-800 dark:text-slate-100 outline-none"
                     />
+
+                    <label htmlFor="contact-role" className="sr-only">Emergency Level Assignment</label>
                     <select 
+                        id="contact-role"
                         name="role"
                         className="col-span-2 text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-850 text-slate-700 dark:text-slate-300 outline-none"
                     >
@@ -2385,6 +2793,7 @@ function CircleTab({ contacts, handleAddContact, handleDeleteContact, circleMemb
                         <option value="Local Friend">Local Friend</option>
                         <option value="Police Dispatch">Police Dispatch Liaison</option>
                     </select>
+
                     <button 
                         type="submit"
                         className="col-span-2 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition shadow-sm"
@@ -2394,9 +2803,9 @@ function CircleTab({ contacts, handleAddContact, handleDeleteContact, circleMemb
                 </form>
 
                 {/* Contacts List */}
-                <div className="space-y-2">
+                <div className="space-y-2" role="list">
                     {contacts.map(c => (
-                        <div key={c.id} className="flex justify-between items-center p-3 rounded-xl border border-slate-100 dark:border-navy-800 bg-slate-50/50 dark:bg-navy-900/50">
+                        <div key={c.id} className="flex justify-between items-center p-3 rounded-xl border border-slate-100 dark:border-navy-800 bg-slate-50/50 dark:bg-navy-900/50" role="listitem">
                             <div>
                                 <span className="font-extrabold text-xs text-slate-800 dark:text-slate-100 block">{c.name} ({c.relation})</span>
                                 <span className="text-[10px] text-slate-400 block mt-0.5">{c.phone} | <span className="font-bold text-red-500 dark:text-red-400">{c.role}</span></span>
@@ -2404,6 +2813,8 @@ function CircleTab({ contacts, handleAddContact, handleDeleteContact, circleMemb
                             <button 
                                 onClick={() => handleDeleteContact(c.id)}
                                 className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 dark:hover:bg-navy-800 transition"
+                                aria-label={`Delete emergency contact ${c.name}`}
+                                type="button"
                             >
                                 <Icon name="trash-2" size={14} />
                             </button>
