@@ -216,16 +216,34 @@ function SplashScreen({ onEnter, onQuickAction }) {
             
             <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center z-10 relative">
                 
-                {/* 3D GLOBE DISPLAY */}
-                <div className="md:col-span-6 flex flex-col items-center text-center">
-                    <div ref={containerRef} className="w-56 h-56 sm:w-64 sm:h-64 md:w-80 md:h-80 relative flex items-center justify-center mb-2"></div>
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-white leading-none">AEGISNET</h1>
-                    <p className="text-xs font-black text-red-500 tracking-[0.3em] uppercase mt-1">AI Personal Safety Node</p>
+                {/* 3D GLOBE DISPLAY PANEL (THREAT MONITOR) */}
+                <div className="md:col-span-6 bg-slate-900/60 backdrop-blur-md border border-slate-800/80 rounded-3xl p-5 shadow-2xl relative flex flex-col text-left">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-850 mb-2">
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                            <span className="text-[9px] font-mono tracking-wider text-slate-400 font-extrabold uppercase">THREAT MONITOR</span>
+                        </div>
+                        <span className="text-[9px] font-mono text-cyan-400 font-bold">Security Globe</span>
+                    </div>
+
+                    <div ref={containerRef} className="w-56 h-56 sm:w-64 sm:h-64 md:w-80 md:h-80 relative flex items-center justify-center mx-auto mb-2"></div>
+                    
+                    <div className="text-center mt-2">
+                        <h1 className="text-2xl sm:text-3xl font-black tracking-tighter text-white leading-none">AEGISNET</h1>
+                        <p className="text-[9px] font-black text-red-500 tracking-[0.3em] uppercase mt-1">AI Personal Safety Node</p>
+                    </div>
                 </div>
 
-                {/* CYBER DIAGNOSTICS & EMERGENCY COMMAND DECK */}
+                {/* CYBER DIAGNOSTICS & SYSTEM STATUS CARD */}
                 <div className="md:col-span-6 bg-slate-900/80 backdrop-blur-md border border-slate-800/80 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5 text-left">
                     
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-850">
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                            <span className="text-[9px] font-mono tracking-wider text-slate-400 font-extrabold uppercase">SYSTEM STATUS & COMMAND</span>
+                        </div>
+                    </div>
+
                     {isScanning ? (
                         /* INITIAL SCANNING VIEW */
                         <div className="py-8 space-y-5">
@@ -260,73 +278,88 @@ function SplashScreen({ onEnter, onQuickAction }) {
                     ) : (
                         /* LIVE DEPLOYED DASHBOARD VIEW */
                         <>
-                            {/* Radial Threat Indicator */}
-                            <div className="flex items-center gap-4 bg-black/30 p-3 rounded-2xl border border-slate-800/50 shadow-inner">
-                                <div className="relative w-12 h-12 flex items-center justify-center">
-                                    <svg className="w-12 h-12 -rotate-90" aria-hidden="true">
-                                        <circle cx="24" cy="24" r="20" className="stroke-slate-800 fill-none" strokeWidth="4" />
-                                        <circle cx="24" cy="24" r="20" className="stroke-emerald-500 fill-none" strokeWidth="4" strokeDasharray="125" strokeDashoffset="10" />
+                            {/* Semi-Circular Threat Index Gauge */}
+                            <div className="flex flex-col items-center justify-center p-3 bg-black/30 rounded-2xl border border-slate-850 shadow-inner">
+                                <div className="relative w-28 h-20 flex items-center justify-center overflow-hidden">
+                                    <svg className="w-28 h-28 absolute -top-3" viewBox="0 0 100 100" aria-hidden="true">
+                                        <path d="M 15,80 A 40,40 0 1,1 85,80" className="stroke-slate-800 fill-none" strokeWidth="6" strokeLinecap="round"/>
+                                        <path d="M 15,80 A 40,40 0 1,1 85,80" className="stroke-cyan-450 fill-none" strokeWidth="6" strokeLinecap="round" strokeDasharray="180" strokeDashoffset="18"/>
                                     </svg>
-                                    <span className="absolute text-xs font-black font-mono text-emerald-400" aria-label="96 percent safety rating">96%</span>
+                                    <div className="text-center absolute top-5">
+                                        <span className="text-xl font-black font-mono text-cyan-400 block leading-none">96%</span>
+                                        <span className="text-[8px] font-black text-slate-400 tracking-wider uppercase">SECURE</span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Network Threat Index</div>
-                                    <div className="text-xs font-extrabold text-emerald-400 mt-0.5 uppercase tracking-wide">🟢 Zone Secure (NYU)</div>
-                                </div>
+                                <div className="text-[9px] font-mono text-slate-500 font-bold uppercase tracking-wider mt-1">96% / SAFE</div>
                             </div>
 
                             {/* Checklist widget */}
                             <div className="space-y-2">
-                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-wider">System Checklist</div>
-                                <div className="grid grid-cols-2 gap-2 text-[10px]" role="list">
-                                    <div className="p-2 bg-slate-850/50 rounded-xl border border-slate-800/30 flex items-center gap-1.5" role="listitem">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" aria-hidden="true"></span>
-                                        <span className="text-slate-300 font-bold">GPS Geolocation</span>
+                                <div className="grid grid-cols-1 gap-1.5 text-[10px] bg-slate-950/20 p-3 rounded-2xl border border-slate-850" role="list">
+                                    <div className="flex items-center justify-between py-0.5" role="listitem">
+                                        <span className="text-slate-400 flex items-center gap-1.5 font-bold">
+                                            <Icon name="check-circle" className="text-emerald-500" size={12} />
+                                            GPS Geolocation:
+                                        </span>
+                                        <span className="text-emerald-400 font-black tracking-wide uppercase">ACTIVE</span>
                                     </div>
-                                    <div className="p-2 bg-slate-850/50 rounded-xl border border-slate-800/30 flex items-center gap-1.5" role="listitem">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" aria-hidden="true"></span>
-                                        <span className="text-slate-300 font-bold">Edge AI Mic</span>
+                                    <div className="flex items-center justify-between py-0.5" role="listitem">
+                                        <span className="text-slate-400 flex items-center gap-1.5 font-bold">
+                                            <Icon name="check-circle" className="text-emerald-500" size={12} />
+                                            Edge AI Mic:
+                                        </span>
+                                        <span className="text-emerald-400 font-black tracking-wide uppercase">SECURE</span>
                                     </div>
-                                    <div className="p-2 bg-slate-850/50 rounded-xl border border-slate-800/30 flex items-center gap-1.5 col-span-2" role="listitem">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" aria-hidden="true"></span>
-                                        <span className="text-slate-300 font-bold">Guardian Network: 3 Active Circle Beacons</span>
+                                    <div className="flex items-center justify-between py-0.5" role="listitem">
+                                        <span className="text-slate-400 flex items-center gap-1.5 font-bold">
+                                            <Icon name="check-circle" className="text-emerald-500" size={12} />
+                                            Network Integrity:
+                                        </span>
+                                        <span className="text-emerald-400 font-black tracking-wide uppercase">NOMINAL</span>
+                                    </div>
+                                    <div className="flex items-center justify-between py-0.5" role="listitem">
+                                        <span className="text-slate-400 flex items-center gap-1.5 font-bold">
+                                            <Icon name="check-circle" className="text-emerald-500" size={12} />
+                                            End-to-End Encryption:
+                                        </span>
+                                        <span className="text-emerald-400 font-black tracking-wide uppercase">VERIFIED</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Direct Duress Actions (The Unique Feature) */}
-                            <div className="space-y-2 pt-1 border-t border-slate-800/60">
-                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Emergency Duress Launchpad</div>
+                            {/* Direct Duress Actions (QUICK DURESS LAUNCHER) */}
+                            <div className="space-y-2 pt-1 border-t border-slate-850">
+                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-wider">QUICK DURESS LAUNCHER</div>
                                 <div className="grid grid-cols-3 gap-2">
                                     <button 
                                         onClick={() => handleQuickActionClick('call')}
-                                        className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 transition"
+                                        className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:border-cyan-500/50 hover:text-cyan-400 transition"
                                         title="Simulate Fake Call instantly"
                                         aria-label="Simulate fake phone call"
                                         type="button"
                                     >
                                         <Icon name="phone" size={16} />
-                                        <span className="text-[9px] font-black mt-1 uppercase">Fake Call</span>
+                                        <span className="text-[9px] font-black mt-1.5 uppercase">FAKE CALL</span>
                                     </button>
                                     <button 
                                         onClick={() => handleQuickActionClick('cover')}
-                                        className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 transition"
+                                        className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:border-amber-500/50 hover:text-amber-450 transition"
                                         title="Open Notes Cover Screen instantly"
                                         aria-label="Launch covert notes screen"
                                         type="button"
                                     >
                                         <Icon name="eye-off" size={16} />
-                                        <span className="text-[9px] font-black mt-1 uppercase">Notepad</span>
+                                        <span className="text-[9px] font-black mt-1.5 uppercase">NOTEPAD</span>
                                     </button>
                                     <button 
                                         onClick={() => handleQuickActionClick('sos')}
-                                        className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-red-650/15 hover:bg-red-600/30 border border-red-500/40 text-red-500 transition animate-pulse"
+                                        className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-red-950/20 border border-red-900/60 text-red-500 hover:bg-red-900/20 transition animate-pulse"
                                         title="Trigger Silent SOS instantly"
                                         aria-label="Trigger immediate emergency SOS"
                                         type="button"
                                     >
                                         <Icon name="shield-alert" size={16} />
-                                        <span className="text-[9px] font-black mt-1 uppercase">Silent SOS</span>
+                                        <span className="text-[9px] font-black mt-1.5 uppercase">SILENT SOS</span>
                                     </button>
                                 </div>
                             </div>
