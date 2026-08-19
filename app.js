@@ -34,9 +34,36 @@ const MOCK_MESSAGES = [
 ];
 
 // Interactive 3D WebGL Splash Screen using Three.js
-function SplashScreen({ onEnter }) {
+function SplashScreen({ onEnter, onQuickAction }) {
     const containerRef = useRef(null);
     const [fadeClass, setFadeClass] = useState("opacity-100");
+    const [isScanning, setIsScanning] = useState(true);
+    const [scanProgress, setScanProgress] = useState(0);
+    const [scanText, setScanText] = useState("Initializing Aegis core systems...");
+
+    useEffect(() => {
+        if (!isScanning) return;
+        const scanSteps = [
+            { prog: 20, text: "Calibrating Edge AI voice sensors..." },
+            { prog: 45, text: "Locking GPS location satellites..." },
+            { prog: 70, text: "Syncing Circle Guardian beacons..." },
+            { prog: 85, text: "Fetching local crowd safety rating..." },
+            { prog: 100, text: "Aegis Secure Node Online. Status: Guarding." }
+        ];
+        
+        let stepIdx = 0;
+        const interval = setInterval(() => {
+            if (stepIdx < scanSteps.length) {
+                setScanProgress(scanSteps[stepIdx].prog);
+                setScanText(scanSteps[stepIdx].text);
+                stepIdx++;
+            } else {
+                clearInterval(interval);
+                setIsScanning(false);
+            }
+        }, 350);
+        return () => clearInterval(interval);
+    }, [isScanning]);
 
     useEffect(() => {
         if (!window.THREE || !containerRef.current) return;
@@ -55,10 +82,9 @@ function SplashScreen({ onEnter }) {
         containerRef.current.appendChild(renderer.domElement);
 
         // 2. Objects Creation
-        // Create an outer wireframe sphere (Aegis Red Globe)
-        const geometry = new THREE.SphereGeometry(1.7, 16, 16);
+        const geometry = new THREE.SphereGeometry(1.6, 16, 16);
         const material = new THREE.MeshBasicMaterial({
-            color: 0xef4444, // Emergency Red
+            color: 0xef4444,
             wireframe: true,
             transparent: true,
             opacity: 0.35
@@ -66,10 +92,9 @@ function SplashScreen({ onEnter }) {
         const globe = new THREE.Mesh(geometry, material);
         scene.add(globe);
 
-        // Create an inner wireframe sphere (Neon Cyan)
-        const innerGeom = new THREE.IcosahedronGeometry(1.15, 1);
+        const innerGeom = new THREE.IcosahedronGeometry(1.1, 1);
         const innerMat = new THREE.MeshBasicMaterial({
-            color: 0x00f0ff, // Safety Cyan
+            color: 0x00f0ff,
             wireframe: true,
             transparent: true,
             opacity: 0.2
@@ -77,8 +102,7 @@ function SplashScreen({ onEnter }) {
         const innerGlobe = new THREE.Mesh(innerGeom, innerMat);
         scene.add(innerGlobe);
 
-        // Orbital particles (satellite protection grid)
-        const particleCount = 180;
+        const particleCount = 150;
         const particleGeometry = new THREE.BufferGeometry();
         const positions = new Float32Array(particleCount * 3);
         
@@ -87,7 +111,7 @@ function SplashScreen({ onEnter }) {
             const v = Math.random();
             const theta = u * 2.0 * Math.PI;
             const phi = Math.acos(2.0 * v - 1.0);
-            const r = 2.0 + Math.random() * 0.5; // Orbit height
+            const r = 2.0 + Math.random() * 0.4;
             
             positions[i] = r * Math.sin(phi) * Math.cos(theta);
             positions[i+1] = r * Math.sin(phi) * Math.sin(theta);
@@ -97,35 +121,29 @@ function SplashScreen({ onEnter }) {
         particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         const particleMaterial = new THREE.PointsMaterial({
             color: 0xffffff,
-            size: 0.05,
+            size: 0.04,
             transparent: true,
-            opacity: 0.8
+            opacity: 0.7
         });
         const particles = new THREE.Points(particleGeometry, particleMaterial);
         scene.add(particles);
 
-        // 3. Mouse Parallax Movement
         let mouseX = 0, mouseY = 0;
         const onMouseMove = (e) => {
-            mouseX = (e.clientX - window.innerWidth / 2) / 200;
-            mouseY = (e.clientY - window.innerHeight / 2) / 200;
+            mouseX = (e.clientX - window.innerWidth / 2) / 300;
+            mouseY = (e.clientY - window.innerHeight / 2) / 300;
         };
         window.addEventListener('mousemove', onMouseMove);
 
-        // 4. Animation loop
         let animId;
         const animate = () => {
             animId = requestAnimationFrame(animate);
 
-            globe.rotation.y += 0.005;
-            globe.rotation.x += 0.002;
-
-            innerGlobe.rotation.y -= 0.003;
-
+            globe.rotation.y += 0.004;
+            globe.rotation.x += 0.001;
+            innerGlobe.rotation.y -= 0.002;
             particles.rotation.y += 0.001;
-            particles.rotation.x -= 0.001;
 
-            // Interpolate mouse positioning for smooth parallax
             scene.rotation.y += (mouseX - scene.rotation.y) * 0.05;
             scene.rotation.x += (mouseY - scene.rotation.x) * 0.05;
 
@@ -133,7 +151,6 @@ function SplashScreen({ onEnter }) {
         };
         animate();
 
-        // 5. Clean up WebGL contexts and listeners
         return () => {
             cancelAnimationFrame(animId);
             window.removeEventListener('mousemove', onMouseMove);
@@ -156,28 +173,141 @@ function SplashScreen({ onEnter }) {
         setTimeout(onEnter, 700);
     };
 
+    const handleQuickActionClick = (type) => {
+        setFadeClass("opacity-0 transition-opacity duration-700 ease-out pointer-events-none");
+        setTimeout(() => {
+            onQuickAction(type);
+        }, 700);
+    };
+
     return (
-        <div className={`fixed inset-0 z-50 bg-[#060b13] flex flex-col items-center justify-center p-6 text-white text-center ${fadeClass}`}>
-            {/* Glowing background circles */}
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-red-600/10 rounded-full blur-[100px] pointer-events-none"></div>
-            <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] bg-blue-500/5 rounded-full blur-[80px] pointer-events-none"></div>
+        <div className={`fixed inset-0 z-50 bg-[#04080e] flex items-center justify-center p-4 md:p-8 text-white font-sans ${fadeClass} overflow-y-auto`}>
+            {/* Glowing background highlights */}
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-red-650/10 rounded-full blur-[120px] pointer-events-none"></div>
+            <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] bg-blue-500/5 rounded-full blur-[100px] pointer-events-none"></div>
             
-            {/* Canvas Mount */}
-            <div ref={containerRef} className="w-64 h-64 md:w-80 md:h-80 relative flex items-center justify-center mb-4"></div>
-            
-            <div className="z-10 space-y-2 max-w-md">
-                <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-white leading-none">AEGISNET</h1>
-                <p className="text-xs md:text-sm font-black text-red-500 tracking-[0.25em] uppercase">AI Personal Safety Node</p>
-                <p className="text-slate-400 text-xs px-4 pt-4 pb-6 leading-relaxed">
-                    Empowering students, commuters, and families with AI-driven safe pathfinding, discrete distress vocal triggers, and a real-time guardian network.
-                </p>
+            <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center z-10 relative">
                 
-                <button 
-                    onClick={handleEnter}
-                    className="px-8 py-3.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-red-600/25 transition-all hover:scale-[1.03] active:scale-[0.98]"
-                >
-                    Initialize Secure Node
-                </button>
+                {/* 3D GLOBE DISPLAY */}
+                <div className="md:col-span-6 flex flex-col items-center text-center">
+                    <div ref={containerRef} className="w-56 h-56 sm:w-64 sm:h-64 md:w-80 md:h-80 relative flex items-center justify-center mb-2"></div>
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-white leading-none">AEGISNET</h1>
+                    <p className="text-xs font-black text-red-500 tracking-[0.3em] uppercase mt-1">AI Personal Safety Node</p>
+                </div>
+
+                {/* CYBER DIAGNOSTICS & EMERGENCY COMMAND DECK */}
+                <div className="md:col-span-6 bg-slate-900/80 backdrop-blur-md border border-slate-800/80 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5 text-left">
+                    
+                    {isScanning ? (
+                        /* INITIAL SCANNING VIEW */
+                        <div className="py-8 space-y-5">
+                            <div className="space-y-1">
+                                <h3 className="font-extrabold text-xs text-red-500 uppercase tracking-widest">Aegis Diagnostics</h3>
+                                <p className="text-[10px] text-slate-400">Verifying secure node parameters...</p>
+                            </div>
+                            
+                            {/* Glowing Terminal Printout */}
+                            <div className="bg-black/50 p-4 rounded-xl border border-slate-800/50 font-mono text-[10px] text-cyan-400 space-y-1 min-h-[70px] leading-relaxed shadow-inner">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                                    <span>{scanText}</span>
+                                </div>
+                                <div className="text-slate-500 text-[9px]">Node IP: 127.0.0.1 (VPN SECURE)</div>
+                            </div>
+
+                            {/* Diagnostics Bar */}
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-[9px] font-bold text-slate-500 uppercase">
+                                    <span>Scan Integrity</span>
+                                    <span>{scanProgress}%</span>
+                                </div>
+                                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                    <div 
+                                        className="bg-gradient-to-r from-red-600 to-cyan-400 h-full transition-all duration-300"
+                                        style={{ width: `${scanProgress}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        /* LIVE DEPLOYED DASHBOARD VIEW */
+                        <>
+                            {/* Radial Threat Indicator */}
+                            <div className="flex items-center gap-4 bg-black/30 p-3 rounded-2xl border border-slate-800/50 shadow-inner">
+                                <div className="relative w-12 h-12 flex items-center justify-center">
+                                    <svg className="w-12 h-12 -rotate-90">
+                                        <circle cx="24" cy="24" r="20" className="stroke-slate-800 fill-none" strokeWidth="4" />
+                                        <circle cx="24" cy="24" r="20" className="stroke-emerald-500 fill-none" strokeWidth="4" strokeDasharray="125" strokeDashoffset="10" />
+                                    </svg>
+                                    <span className="absolute text-xs font-black font-mono text-emerald-400">96%</span>
+                                </div>
+                                <div>
+                                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Network Threat Index</div>
+                                    <div className="text-xs font-extrabold text-emerald-400 mt-0.5 uppercase tracking-wide">🟢 Zone Secure (NYU)</div>
+                                </div>
+                            </div>
+
+                            {/* Checklist widget */}
+                            <div className="space-y-2">
+                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-wider">System Checklist</div>
+                                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                    <div className="p-2 bg-slate-850/50 rounded-xl border border-slate-800/30 flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></span>
+                                        <span className="text-slate-300 font-bold">GPS Geolocation</span>
+                                    </div>
+                                    <div className="p-2 bg-slate-850/50 rounded-xl border border-slate-800/30 flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></span>
+                                        <span className="text-slate-300 font-bold">Edge AI Mic</span>
+                                    </div>
+                                    <div className="p-2 bg-slate-850/50 rounded-xl border border-slate-800/30 flex items-center gap-1.5 col-span-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"></span>
+                                        <span className="text-slate-300 font-bold">Guardian Network: 3 Active Circle Beacons</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Direct Duress Actions (The Unique Feature) */}
+                            <div className="space-y-2 pt-1 border-t border-slate-800/60">
+                                <div className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Emergency Duress Launchpad</div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <button 
+                                        onClick={() => handleQuickActionClick('call')}
+                                        className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 transition"
+                                        title="Simulate Fake Call instantly"
+                                    >
+                                        <Icon name="phone" size={16} />
+                                        <span className="text-[9px] font-black mt-1 uppercase">Fake Call</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => handleQuickActionClick('cover')}
+                                        className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 transition"
+                                        title="Open Notes Cover Screen instantly"
+                                    >
+                                        <Icon name="eye-off" size={16} />
+                                        <span className="text-[9px] font-black mt-1 uppercase">Notepad</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => handleQuickActionClick('sos')}
+                                        className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-red-650/15 hover:bg-red-600/30 border border-red-500/40 text-red-500 transition animate-pulse"
+                                        title="Trigger Silent SOS instantly"
+                                    >
+                                        <Icon name="shield-alert" size={16} />
+                                        <span className="text-[9px] font-black mt-1 uppercase">Silent SOS</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Main Enter Button */}
+                            <button 
+                                onClick={handleEnter}
+                                className="w-full py-4 bg-gradient-to-r from-red-650 to-red-750 hover:from-red-600 hover:to-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
+                            >
+                                <span>Initialize Active Patrol Node</span>
+                                <Icon name="chevron-right" size={14} />
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -928,7 +1058,17 @@ function App() {
 
     return (
         <div className="flex flex-col md:flex-row h-full w-full bg-slate-50 dark:bg-navy-950">
-            {showSplash && <SplashScreen onEnter={() => setShowSplash(false)} />}
+            {showSplash && (
+                <SplashScreen 
+                    onEnter={() => setShowSplash(false)} 
+                    onQuickAction={(actionType) => {
+                        setShowSplash(false);
+                        if (actionType === 'sos') triggerSOSAlert('Splash Launcher Emergency');
+                        if (actionType === 'call') handleTriggerFakeCall('Mom');
+                        if (actionType === 'cover') setShowCoverScreen(true);
+                    }}
+                />
+            )}
             
             {/* Desktop Navigation Sidebar / Mobile Title Header */}
             <aside className="w-full md:w-80 bg-white dark:bg-navy-900 border-b md:border-b-0 md:border-r border-slate-200 dark:border-navy-800 flex flex-col z-20 shadow-md">
